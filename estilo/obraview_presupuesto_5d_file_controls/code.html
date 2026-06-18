@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ObraView - Presupuesto 5D</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(22, 22, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2a2a45;
+            border-radius: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #4a9eff;
+        }
+        .accent-amber-glow {
+            border-color: #f39c12;
+            box-shadow: 0 0 8px rgba(243, 156, 18, 0.2);
+        }
+        @keyframes subtle-pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+        .active-row {
+            background: rgba(164, 201, 255, 0.08);
+            border-left: 2px solid #f39c12;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#1f1e2a",
+                        "on-surface-variant": "#c0c7d4",
+                        "surface-container-high": "#292935",
+                        "surface-container-low": "#1b1a26",
+                        "surface": "#12121d",
+                        "surface-navy": "#1a1a2e",
+                        "border-muted": "#2a2a45",
+                        "primary": "#a4c9ff",
+                        "secondary": "#ffb961",
+                        "tertiary": "#ebb2ff",
+                        "error": "#ffb4ab",
+                        "background": "#12121d",
+                        "on-surface": "#e3e0f1",
+                        "on-primary": "#00315d",
+                        "accent-amber": "#f39c12"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "12px",
+                        "margin-desktop": "24px",
+                        "window-padding": "12px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["JetBrains Mono"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "label-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["10px", {"lineHeight": "14px", "fontWeight": "500"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface overflow-hidden font-body-md text-on-surface">
+<!-- 3D Viewport Background -->
+<div class="fixed inset-0 z-0 overflow-hidden">
+<!-- Mock 3D Elements Placeholder -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+<span class="material-symbols-outlined text-[300px] text-primary/10">architecture</span>
+</div>
+</div>
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full px-margin-desktop h-12 z-[100] fixed top-0 bg-surface-navy/85 backdrop-blur-xl border-b border-border-muted">
+<div class="flex items-center gap-4">
+<span class="text-headline-md font-headline-md font-bold text-primary">ObraView</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-on-surface-variant hover:bg-surface-variant/50 transition-colors text-label-md font-label-md px-3 py-1 rounded" href="#">Project</a>
+<a class="text-on-surface-variant hover:bg-surface-variant/50 transition-colors text-label-md font-label-md px-3 py-1 rounded" href="#">Coordination</a>
+<a class="text-primary font-bold border-b-2 border-primary text-label-md font-label-md px-3 py-1" href="#">5D Estimation</a>
+</nav>
+</div>
+<div class="flex items-center gap-3"><div class="flex items-center gap-1 mr-2 border-r border-border-muted/50 pr-3">
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface rounded transition-all" title="Nuevo">
+<span class="material-symbols-outlined text-[20px]">note_add</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface rounded transition-all" title="Guardar">
+<span class="material-symbols-outlined text-[20px]">save</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface rounded transition-all" title="Abrir">
+<span class="material-symbols-outlined text-[20px]">folder_open</span>
+</button>
+</div>
+<button class="px-4 py-1.5 bg-primary/10 border border-primary/30 text-primary text-label-md font-label-md rounded hover:bg-primary/20 transition-all">Load IFC</button>
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/50 p-1.5 rounded cursor-pointer">settings</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/50 p-1.5 rounded cursor-pointer">notifications</span>
+</div>
+</header>
+<!-- Side NavBar (Viewport Controls) -->
+<aside class="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-gutter p-2 z-70 bg-surface-navy/85 backdrop-blur-md border border-border-muted rounded-xl shadow-md">
+<div class="px-2 py-1 mb-2">
+<h3 class="text-label-sm font-label-sm text-on-surface-variant/50 uppercase tracking-widest">Viewport</h3>
+</div>
+<button class="bg-primary/10 text-primary border border-primary/30 rounded-lg p-2 flex flex-col items-center gap-1">
+<span class="material-symbols-outlined">3d_rotation</span>
+<span class="text-label-sm font-label-sm">3D View</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-bright/50 rounded-lg p-2 flex flex-col items-center gap-1 transition-all">
+<span class="material-symbols-outlined">south_east</span>
+<span class="text-label-sm font-label-sm">Top</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-bright/50 rounded-lg p-2 flex flex-col items-center gap-1 transition-all">
+<span class="material-symbols-outlined">vertical_align_center</span>
+<span class="text-label-sm font-label-sm">Front</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-bright/50 rounded-lg p-2 flex flex-col items-center gap-1 transition-all">
+<span class="material-symbols-outlined">content_cut</span>
+<span class="text-label-sm font-label-sm">Clip</span>
+</button>
+</aside>
+<!-- Main Content: 5D Budget Window -->
+<main class="fixed inset-0 pt-12 z-10 flex items-start justify-center p-8 pointer-events-none">
+<!-- Draggable-like Floating Window -->
+<div class="glass-panel w-full max-w-4xl h-[640px] pointer-events-auto rounded-xl border border-border-muted accent-amber-glow shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+<!-- Window Header -->
+<div class="h-11 px-4 border-b border-border-muted flex items-center justify-between cursor-move bg-surface-container/50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-accent-amber" style="font-variation-settings: 'FILL' 1;">payments</span>
+<h2 class="text-label-md font-label-md font-bold text-accent-amber tracking-tight">PRESUPUESTO 5D</h2>
+<span class="text-[10px] bg-accent-amber/10 text-accent-amber border border-accent-amber/30 px-1.5 py-0.5 rounded uppercase font-label-sm">Revision 04</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="hover:bg-surface-bright p-1 rounded transition-colors">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<button class="hover:bg-surface-bright p-1 rounded transition-colors">
+<span class="material-symbols-outlined text-[20px]">fullscreen</span>
+</button>
+<button class="hover:bg-error/20 hover:text-error p-1 rounded transition-colors">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+<!-- Summary Bar -->
+<div class="flex items-center justify-between px-4 py-3 bg-surface-container-low border-b border-border-muted">
+<div class="flex gap-8">
+<div>
+<p class="text-label-sm font-label-sm text-on-surface-variant uppercase opacity-50">Presupuesto Total</p>
+<p class="text-headline-md font-headline-md font-bold text-on-surface">$ 1,248,500.00</p>
+</div>
+<div class="h-10 w-px bg-border-muted"></div>
+<div class="flex flex-col justify-center">
+<select class="bg-surface-navy border border-border-muted rounded text-label-md font-label-md px-2 py-1 outline-none focus:border-accent-amber transition-colors">
+<option>USD ($)</option>
+<option>EUR (€)</option>
+<option>MXN ($)</option>
+</select>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-3 py-1.5 text-label-md font-label-md border border-border-muted rounded hover:bg-surface-bright transition-all">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                        PDF
+                    </button>
+<button class="flex items-center gap-2 px-3 py-1.5 text-label-md font-label-md border border-border-muted rounded hover:bg-surface-bright transition-all">
+<span class="material-symbols-outlined text-[18px]">table_chart</span>
+                        Excel
+                    </button>
+<button class="flex items-center gap-2 px-4 py-1.5 text-label-md font-label-md bg-accent-amber text-on-secondary font-bold rounded hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">add</span>
+                        Rubro
+                    </button>
+</div>
+</div>
+<!-- Table Section -->
+<div class="flex-1 overflow-hidden flex flex-col">
+<!-- Table Header -->
+<div class="grid grid-cols-[1.5fr_100px_120px_140px_140px_120px] px-4 py-2 bg-surface-container-highest/30 border-b border-border-muted text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">
+<div>Descripción del Item</div>
+<div class="text-center">Unidad</div>
+<div class="text-right">Cantidad</div>
+<div class="text-right">P. Unitario</div>
+<div class="text-right">Total Item</div>
+<div class="text-center">Vínculo BIM</div>
+</div>
+<!-- Table Body -->
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<!-- Row 1 (Selected) -->
+<div class="grid grid-cols-[1.5fr_100px_120px_140px_140px_120px] px-4 py-3 border-b border-border-muted/50 items-center active-row group cursor-pointer transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-accent-amber text-[16px]">label</span>
+<span class="font-body-md font-medium">01.02.05 Excavación Masiva - Terreno Roca</span>
+</div>
+<div class="text-center text-on-surface-variant font-label-sm">m³</div>
+<div class="text-right font-label-md">1,250.00</div>
+<div class="text-right font-label-md">$ 45.00</div>
+<div class="text-right font-label-md font-bold text-on-surface">$ 56,250.00</div>
+<div class="flex justify-center">
+<span class="text-[10px] py-0.5 px-2 bg-primary/10 text-primary border border-primary/20 rounded-full font-label-sm">ASIGNADO</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-[1.5fr_100px_120px_140px_140px_120px] px-4 py-3 border-b border-border-muted/50 items-center hover:bg-surface-bright/20 group cursor-pointer transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant/40 text-[16px]">label</span>
+<span class="font-body-md">02.01.01 Cimentación - Zapatas Corridas</span>
+</div>
+<div class="text-center text-on-surface-variant font-label-sm">m³</div>
+<div class="text-right font-label-md">480.00</div>
+<div class="text-right font-label-md">$ 320.00</div>
+<div class="text-right font-label-md font-bold text-on-surface">$ 153,600.00</div>
+<div class="flex justify-center">
+<span class="text-[10px] py-0.5 px-2 bg-primary/10 text-primary border border-primary/20 rounded-full font-label-sm">ASIGNADO</span>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-[1.5fr_100px_120px_140px_140px_120px] px-4 py-3 border-b border-border-muted/50 items-center hover:bg-surface-bright/20 group cursor-pointer transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant/40 text-[16px]">label</span>
+<span class="font-body-md">03.05.12 Estructura N1 - Vigas Longitudinales</span>
+</div>
+<div class="text-center text-on-surface-variant font-label-sm">kg</div>
+<div class="text-right font-label-md">12,450.00</div>
+<div class="text-right font-label-md">$ 1.85</div>
+<div class="text-right font-label-md font-bold text-on-surface">$ 23,032.50</div>
+<div class="flex justify-center">
+<span class="text-[10px] py-0.5 px-2 bg-primary/10 text-primary border border-primary/20 rounded-full font-label-sm">ASIGNADO</span>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="grid grid-cols-[1.5fr_100px_120px_140px_140px_120px] px-4 py-3 border-b border-border-muted/50 items-center hover:bg-surface-bright/20 group cursor-pointer transition-colors bg-surface-container-highest/10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant/40 text-[16px]">label</span>
+<span class="font-body-md text-on-surface-variant">04.10.00 Revestimiento Cerámico Baños</span>
+</div>
+<div class="text-center text-on-surface-variant font-label-sm">m²</div>
+<div class="text-right font-label-md text-on-surface-variant">0.00</div>
+<div class="text-right font-label-md text-on-surface-variant">$ 0.00</div>
+<div class="text-right font-label-md font-bold text-on-surface-variant">$ 0.00</div>
+<div class="flex justify-center">
+<span class="text-[10px] py-0.5 px-2 bg-error/10 text-error border border-error/20 rounded-full font-label-sm">SIN ASIGNAR</span>
+</div>
+</div>
+<!-- Row 5 -->
+<div class="grid grid-cols-[1.5fr_100px_120px_140px_140px_120px] px-4 py-3 border-b border-border-muted/50 items-center hover:bg-surface-bright/20 group cursor-pointer transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant/40 text-[16px]">label</span>
+<span class="font-body-md">05.02.01 Instalación Eléctrica - Tableros</span>
+</div>
+<div class="text-center text-on-surface-variant font-label-sm">ud</div>
+<div class="text-right font-label-md">12.00</div>
+<div class="text-right font-label-md">$ 850.00</div>
+<div class="text-right font-label-md font-bold text-on-surface">$ 10,200.00</div>
+<div class="flex justify-center">
+<span class="text-[10px] py-0.5 px-2 bg-primary/10 text-primary border border-primary/20 rounded-full font-label-sm">ASIGNADO</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer: Cost Analysis -->
+<div class="p-4 bg-surface-container border-t border-border-muted">
+<div class="flex items-center justify-between mb-3">
+<span class="text-label-sm font-label-sm text-on-surface-variant/60 uppercase tracking-widest">Distribución de Costos por Categoría</span>
+<span class="material-symbols-outlined text-on-surface-variant/40 text-[18px]">info</span>
+</div>
+<div class="grid grid-cols-3 gap-6">
+<!-- Category 1 -->
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-label-sm font-label-sm text-on-surface font-medium">Materiales</span>
+<span class="text-label-sm font-label-sm text-accent-amber">58%</span>
+</div>
+<div class="w-full h-1 bg-surface-bright rounded-full overflow-hidden">
+<div class="h-full bg-accent-amber w-[58%] rounded-full"></div>
+</div>
+<p class="text-[10px] font-label-sm text-on-surface-variant mt-1">$ 724,130.00</p>
+</div>
+<!-- Category 2 -->
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-label-sm font-label-sm text-on-surface font-medium">Mano de Obra</span>
+<span class="text-label-sm font-label-sm text-primary">32%</span>
+</div>
+<div class="w-full h-1 bg-surface-bright rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[32%] rounded-full"></div>
+</div>
+<p class="text-[10px] font-label-sm text-on-surface-variant mt-1">$ 399,520.00</p>
+</div>
+<!-- Category 3 -->
+<div>
+<div class="flex justify-between items-end mb-1">
+<span class="text-label-sm font-label-sm text-on-surface font-medium">Equipos</span>
+<span class="text-label-sm font-label-sm text-tertiary">10%</span>
+</div>
+<div class="w-full h-1 bg-surface-bright rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[10%] rounded-full"></div>
+</div>
+<p class="text-[10px] font-label-sm text-on-surface-variant mt-1">$ 124,850.00</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Dock) -->
+<nav class="fixed bottom-0 left-0 w-full z-60 flex justify-center pb-window-padding px-4">
+<div class="bg-surface-container/85 backdrop-blur-xl border border-border-muted rounded-full shadow-lg flex items-center px-6 h-14 gap-8">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface transition-all group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">view_in_ar</span>
+<span class="text-label-sm font-label-sm mt-0.5">Models</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface transition-all group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">timeline</span>
+<span class="text-label-sm font-label-sm mt-0.5">Gantt</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary relative transition-all group">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span class="text-label-sm font-label-sm mt-0.5">Budget</span>
+<div class="absolute -bottom-1 w-1 h-1 bg-primary rounded-full"></div>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface transition-all group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">error_outline</span>
+<span class="text-label-sm font-label-sm mt-0.5">Issues</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface transition-all group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">description</span>
+<span class="text-label-sm font-label-sm mt-0.5">Reports</span>
+</button>
+</div>
+</nav>
+<!-- Side Toolbars (Right Side for Contextual Actions) -->
+<div class="fixed right-margin-desktop top-1/2 -translate-y-1/2 flex flex-col gap-gutter z-50 pointer-events-none">
+<div class="glass-panel p-2 border border-border-muted rounded-xl pointer-events-auto flex flex-col gap-2 shadow-lg">
+<button class="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-bright rounded-lg transition-colors" title="Select Tool">
+<span class="material-symbols-outlined">near_me</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-bright rounded-lg transition-colors" title="Measurement">
+<span class="material-symbols-outlined">straighten</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-bright rounded-lg transition-colors" title="Section Box">
+<span class="material-symbols-outlined">layers</span>
+</button>
+<div class="h-px w-8 mx-auto bg-border-muted my-1"></div>
+<button class="w-10 h-10 flex items-center justify-center text-accent-amber hover:bg-accent-amber/10 rounded-lg transition-colors" title="Compare Versions">
+<span class="material-symbols-outlined">difference</span>
+</button>
+</div>
+</div>
+<!-- Status Bar (Bottom Right) -->
+<div class="fixed bottom-margin-mobile right-margin-mobile z-50 flex items-center gap-4 pointer-events-none">
+<div class="glass-panel px-3 py-1.5 border border-border-muted rounded-full pointer-events-auto flex items-center gap-2">
+<div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Live BIM Sync: Active</span>
+</div>
+</div>
+<script>
+        // Simple micro-interaction for row selection
+        document.querySelectorAll('.flex-1.overflow-y-auto > div').forEach(row => {
+            row.addEventListener('click', () => {
+                document.querySelectorAll('.flex-1.overflow-y-auto > div').forEach(r => r.classList.remove('active-row'));
+                row.classList.add('active-row');
+            });
+        });
+    </script>
+</body></html>

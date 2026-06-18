@@ -8,16 +8,58 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
   <title>ObraView — Visor BIM 3D</title>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f0f1a; color: #e0e0e0; }
+
+    :root {
+      --bg-navy: #0d0d18;
+      --bg-surface-low: #1b1a26;
+      --bg-surface: #1f1e2a;
+      --bg-surface-high: #292935;
+      --bg-surface-highest: #343440;
+      --text-primary: #e3e0f1;
+      --text-secondary: #c0c7d4;
+      --text-tertiary: #888;
+      --border-muted: #2a2a45;
+      --accent-blue: #4a9eff;
+      --accent-blue-light: #a4c9ff;
+      --accent-purple: #9b59b6;
+      --accent-purple-light: #ebb2ff;
+      --accent-amber: #f39c12;
+      --accent-gold: #ffb961;
+      --accent-red: #e74c3c;
+      --accent-green: #2ecc71;
+      --accent-orange: #e67e22;
+      --glass-bg: rgba(22, 22, 42, 0.85);
+      --glass-blur: blur(12px);
+      --radius-sm: 2px;
+      --radius: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-xl: 12px;
+      --radius-full: 9999px;
+      --font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; font-family: var(--font-body); background: var(--bg-navy); color: var(--text-primary); }
     #app { display: flex; flex-direction: column; height: 100%; position: relative; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-muted); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
 
     /* Header */
     #header {
       display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-      padding: 6px 16px; background: #16162a; border-bottom: 1px solid #2a2a45;
+      padding: 6px 16px; background: var(--glass-bg); border-bottom: 1px solid var(--border-muted);
       user-select: none; gap: 12px; flex-wrap: wrap;
     }
     #header .brand { display: flex; align-items: center; gap: 10px; }
@@ -36,7 +78,7 @@
     .btn-primary { background: #4a9eff; color: #fff; }
     .btn-primary:hover { background: #3a8eef; }
     .btn-primary:disabled { background: #2a4a6f; color: #666; cursor: not-allowed; }
-    .btn-secondary { background: #2a2a45; color: #ccc; }
+    .btn-secondary { background: var(--bg-surface-high); color: #ccc; }
     .btn-secondary:hover { background: #3a3a55; }
 
     /* Viewer */
@@ -49,7 +91,7 @@
 
     /* Phase badge overlay */
     #phase-badge {
-      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+      position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
       font-size: 11px; color: rgba(255,255,255,0.25); background: rgba(0,0,0,0.5);
       padding: 4px 12px; border-radius: 12px; pointer-events: none; white-space: nowrap;
       transition: opacity 0.3s; z-index: 1;
@@ -71,8 +113,8 @@
 
     /* View toolbar */
     #view-toolbar {
-      position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 4px; align-items: center; z-index: 10; background: rgba(22,22,42,0.9);
+      position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 4px; align-items: center; z-index: 65; background: rgba(22,22,42,0.9);
       padding: 4px 6px; border-radius: 8px; border: 1px solid #2a2a45;
       backdrop-filter: blur(4px);
     }
@@ -112,12 +154,108 @@
     #context-menu .ctx-item:hover { background: #2a2a45; color: #fff; }
     #context-menu .ctx-divider { height: 1px; background: #2a2a45; margin: 4px 0; }
 
+    /* Gantt panel */
+    .gantt-panel {
+      position: absolute; right: 0; top: 0; width: 400px; height: 100%;
+      background: var(--glass-bg); border-left: 1px solid var(--border-muted);
+      transform: translateX(100%); transition: transform 0.25s ease; z-index: 14;
+      display: flex; flex-direction: column; overflow: hidden; backdrop-filter: var(--glass-blur);
+    }
+    .gantt-panel.visible { transform: translateX(0); }
+    .gantt-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #2a2a45; flex-shrink: 0; }
+    .gantt-title { font-size: 13px; font-weight: 600; }
+    .gantt-close { background: none; border: none; color: #666; cursor: pointer; font-size: 14px; }
+    .gantt-tabs { display: flex; border-bottom: 1px solid #2a2a45; flex-shrink: 0; }
+    .gtab { flex: 1; padding: 8px; border: none; background: transparent; color: #888; cursor: pointer; font-size: 11px; font-weight: 500; border-bottom: 2px solid transparent; }
+    .gtab:hover { color: #fff; background: #2a2a45; }
+    .gtab.active { color: #4a9eff; border-bottom-color: #4a9eff; background: #1a1a30; }
+    .gantt-body { flex: 1; overflow-y: auto; padding: 0; }
+    .gantt-tab-content { padding: 10px 12px; }
+
+    /* Rubros tab */
+    .gr-actions { margin-bottom: 8px; }
+    .gr-empty { color: #666; font-size: 12px; padding: 20px 0; text-align: center; }
+    .gr-list { display: flex; flex-direction: column; gap: 6px; }
+    .gr-item { background: #1a1a30; border: 1px solid #2a2a45; border-radius: 6px; padding: 8px 10px; }
+    .gr-summary { display: flex; align-items: center; gap: 8px; }
+    .gr-color { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
+    .gr-avance { height: 3px; background: #12122a; border-radius: 2px; margin: 4px 0; overflow: hidden; }
+    .gr-avance-fill { height: 100%; background: #4a9eff; border-radius: 2px; transition: width 0.2s; }
+    .gr-name { font-size: 12px; font-weight: 600; flex: 1; }
+    .gr-dates { font-size: 10px; color: #666; }
+    .gr-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 10px; color: #555; }
+    .gr-filtros { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gr-actions-small { display: flex; gap: 4px; flex-shrink: 0; }
+    .gr-btn { padding: 2px 6px; border: 1px solid #2a2a45; border-radius: 3px; background: transparent; color: #888; cursor: pointer; font-size: 10px; line-height: 1.4; }
+    .gr-btn:hover { background: #2a2a45; color: #fff; }
+    .gr-btn-danger:hover { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+    .gr-btn-add { background: #4a9eff; color: #fff; border-color: #4a9eff; }
+    .gr-btn-add:hover { background: #3a8eef; }
+
+    /* Rubro form */
+    .gr-form { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+    .gr-field { display: flex; flex-direction: column; gap: 2px; }
+    .gr-field label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.3px; }
+    .gr-field-row { display: flex; gap: 8px; }
+    .gr-field-row .gr-field { flex: 1; }
+    .gr-input { padding: 5px 8px; border: 1px solid #2a2a45; border-radius: 4px; background: #12122a; color: #e0e0e0; font-size: 11px; outline: none; }
+    .gr-input:focus { border-color: #4a9eff; }
+    .gr-color-input { width: 60px; height: 30px; padding: 2px; cursor: pointer; }
+    .gr-select { cursor: pointer; }
+    .gr-filtro-add { display: flex; gap: 4px; }
+    .gr-filtro-add select { flex: 1; }
+    .gr-filtros-list { display: flex; flex-wrap: wrap; gap: 4px; }
+    .gr-filtro-item { font-size: 10px; background: #2a2a45; padding: 3px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; color: #aaa; }
+    .gr-form-actions { display: flex; gap: 6px; margin-top: 6px; }
+
+    /* Gantt chart tab */
+    .gg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .gg-title { font-size: 12px; font-weight: 600; color: #aaa; }
+    .gg-escala { padding: 3px 6px; border: 1px solid #2a2a45; border-radius: 4px; background: #12122a; color: #e0e0e0; font-size: 10px; cursor: pointer; }
+    .gg-chart { position: relative; overflow-x: auto; min-height: 250px; }
+    .gg-ticks { position: relative; height: 24px; border-bottom: 1px solid #2a2a45; }
+    .gg-tick { position: absolute; font-size: 8px; color: #555; transform: translateX(-50%); white-space: nowrap; }
+    .gg-grid { position: absolute; top: 24px; left: 0; right: 0; bottom: 0; pointer-events: none; }
+    .gg-gridline { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(42,42,69,0.5); }
+    .gg-today { position: absolute; top: 24px; bottom: 0; width: 2px; background: #e74c3c; z-index: 2; pointer-events: none; }
+    .gg-today::before { content: 'Hoy'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 8px; color: #e74c3c; white-space: nowrap; }
+    .gg-bars { position: relative; padding-top: 4px; }
+    .gg-bar-row { display: flex; align-items: flex-start; margin-bottom: 2px; position: relative; min-height: 36px; }
+    .gg-bar-label { width: 80px; font-size: 10px; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-top: 4px; }
+    .gg-bar-track { flex: 1; position: relative; }
+    .gg-bar { position: absolute; top: 0; height: 16px; border-radius: 3px; min-width: 4px; opacity: 0.85; cursor: pointer; overflow: hidden; }
+    .gg-bar:hover { opacity: 1; }
+    .gg-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.25); pointer-events: none; }
+    .gg-bar-handle { position: absolute; top: -2px; width: 6px; height: 20px; cursor: ew-resize; background: rgba(255,255,255,0.3); border-radius: 2px; opacity: 0; transition: opacity 0.15s; }
+    .gg-bar:hover .gg-bar-handle { opacity: 1; }
+    .gg-handle-left { left: -3px; }
+    .gg-handle-right { right: -3px; }
+    .gg-avance-slider { display: flex; align-items: center; gap: 4px; margin-top: 18px; }
+    .gg-avance-slider input[type="range"] { flex: 1; height: 3px; cursor: pointer; }
+    .gg-avance-pct { font-size: 9px; color: #555; min-width: 28px; text-align: right; }
+    .gg-tooltip { display: none; position: absolute; background: rgba(22,22,42,0.95); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 11px; border: 1px solid #2a2a45; pointer-events: none; z-index: 10; white-space: nowrap; }
+
+    /* Colores tab */
+    .gc-actions { display: flex; gap: 6px; margin-bottom: 8px; }
+    .gc-leyenda { display: flex; flex-direction: column; gap: 4px; }
+    .gc-item { display: flex; align-items: center; gap: 8px; padding: 4px 6px; background: #1a1a30; border-radius: 4px; font-size: 11px; }
+    .gc-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+    .gc-name { flex: 1; }
+    .gc-count { font-size: 10px; color: #555; }
+
+    /* Importar tab */
+    .gi-section { margin-bottom: 12px; }
+    .gi-label { font-size: 11px; font-weight: 600; color: #aaa; display: block; margin-bottom: 4px; }
+    .gi-hint { font-size: 10px; color: #666; margin-bottom: 6px; }
+    .gi-hint code { background: #2a2a45; padding: 1px 5px; border-radius: 3px; font-size: 10px; color: #4a9eff; }
+    .gi-file { font-size: 11px; color: #888; }
+
     /* Schedule panel */
     #schedule-panel {
       position: absolute; right: 0; top: 0; width: 340px; height: 100%;
-      background: rgba(22,22,42,0.97); border-left: 1px solid #2a2a45;
+      background: var(--glass-bg); border-left: 1px solid var(--border-muted);
       transform: translateX(100%); transition: transform 0.25s ease; z-index: 14;
-      display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; overflow: hidden; backdrop-filter: var(--glass-blur);
     }
     #schedule-panel.visible { transform: translateX(0); }
     .sch-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #2a2a45; flex-shrink: 0; }
@@ -140,6 +278,45 @@
     .sch-status.completado { background: #2ecc71; color: #fff; }
     .sch-status.atrasado { background: #e74c3c; color: #fff; }
 
+    /* Panels absorbed into floating windows lose slide transforms */
+    .ow-absorbed { position: static !important; width: 100% !important; height: 100% !important; transform: none !important; border: none !important; backdrop-filter: none !important; background: transparent !important; border-radius: 0 !important; }
+
+    /* Floating window manager */
+    .obra-window { transition: box-shadow 0.2s; }
+    .obra-window:hover [class^="ow-resize"] { opacity: 0.3; }
+    [class^="ow-resize"] { opacity: 0; transition: opacity 0.15s; }
+    .ow-body { scrollbar-width: thin; scrollbar-color: #2a2a45 transparent; }
+    .ow-body::-webkit-scrollbar { width: 4px; }
+    .ow-body::-webkit-scrollbar-track { background: transparent; }
+    .ow-body::-webkit-scrollbar-thumb { background: #2a2a45; border-radius: 10px; }
+    .ow-icon { font-size: 14px !important; line-height: 1 !important; }
+    .ow-icon:hover { background: rgba(255,255,255,0.08); color: #fff !important; }
+
+    /* Bottom dock */
+    #obra-dock {
+      position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+      z-index: 60; display: flex; align-items: center; gap: 2px;
+      background: rgba(22,22,42,0.85); backdrop-filter: blur(12px);
+      border: 1px solid #2a2a45;
+      border-radius: 9999px; padding: 4px 6px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    #obra-dock .dock-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 52px; padding: 6px 0 4px; border: none; background: transparent;
+      color: #666; cursor: pointer; border-radius: 8px; transition: all 0.15s;
+      position: relative;
+    }
+    #obra-dock .dock-btn:hover { color: #e3e0f1; background: rgba(255,255,255,0.05); }
+    #obra-dock .dock-btn .material-symbols-outlined { font-size: 20px; }
+    #obra-dock .dock-btn .dock-label { font-size: 9px; line-height: 1; margin-top: 1px; }
+    #obra-dock .dock-btn.active { color: #e3e0f1; }
+    #obra-dock .dock-btn .dot {
+      position: absolute; top: 1px; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent, #4a9eff); display: none;
+    }
+    #obra-dock .dock-btn.open .dot { display: block; }
+
     /* Issue panel (annotation) */
     #issue-panel {
       position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
@@ -152,7 +329,7 @@
     #issue-panel input, #issue-panel textarea, #issue-panel select {
       width: 100%; padding: 5px 8px; margin-bottom: 4px;
       border: 1px solid #2a2a45; border-radius: 4px;
-      background: #1a1a30; color: #e0e0e0; font-size: 11px; outline: none;
+      background: var(--bg-surface-low); color: var(--text-primary); font-size: 11px; outline: none;
     }
     #issue-panel input:focus, #issue-panel textarea:focus { border-color: #4a9eff; }
     #issue-panel textarea { resize: vertical; min-height: 50px; font-family: inherit; }
@@ -170,9 +347,9 @@
     /* Issue list */
     #issue-list {
       position: absolute; right: 0; top: 0; width: 280px; height: 100%;
-      background: rgba(22,22,42,0.97); border-left: 1px solid #2a2a45;
+      background: var(--glass-bg); border-left: 1px solid var(--border-muted);
       transform: translateX(100%); transition: transform 0.25s ease; z-index: 14;
-      display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; overflow: hidden; backdrop-filter: var(--glass-blur);
     }
     #issue-list.visible { transform: translateX(0); }
     #issue-list .il-header {
@@ -238,7 +415,7 @@
       position: absolute; top: 0; left: 0; width: 300px; height: 100%;
       background: rgba(22,22,42,0.97); border-right: 1px solid #2a2a45;
       transform: translateX(-100%); transition: transform 0.25s ease; z-index: 15;
-      display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; overflow: hidden; backdrop-filter: var(--glass-blur);
     }
     .tree-panel.visible { transform: translateX(0); }
     .tree-header {
@@ -283,9 +460,9 @@
     /* Properties panel */
     .properties-panel {
       position: absolute; top: 0; right: 0; width: 320px; height: 100%;
-      background: rgba(22,22,42,0.97); border-left: 1px solid #2a2a45;
+      background: var(--glass-bg); border-left: 1px solid var(--border-muted);
       transform: translateX(100%); transition: transform 0.25s ease; z-index: 15;
-      display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; overflow: hidden; backdrop-filter: var(--glass-blur);
     }
     .properties-panel.visible { transform: translateX(0); }
     .properties-panel .panel-header {
@@ -306,6 +483,50 @@
     .properties-panel .prop-label { color: #888; flex-shrink: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .properties-panel .prop-value { color: #e0e0e0; text-align: right; word-break: break-all; }
 
+    /* Collision - override old panel styles when absorbed */
+    #collision-panel.ow-absorbed { display:flex !important; flex-direction:column; height:100% }
+    .col-severity-critical { color:#e74c3c }
+    .col-severity-high { color:#e67e22 }
+    .col-severity-medium { color:#f39c12 }
+    .col-severity-low { color:#3498db }
+
+    /* Settings panel */
+    .st-row { display:flex; align-items:center; gap:10px }
+    .st-label { min-width:115px; flex-shrink:0 }
+
+    /* Simulation controls */
+    .sim-btn { display:flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid #2a2a45;border-radius:4px;background:transparent;color:#aaa;cursor:pointer;transition:all 0.1s }
+    .sim-btn:hover { background:#2a2a45;color:#fff }
+    .sim-btn-active { background:#4a9eff;color:#fff;border-color:#4a9eff }
+
+    /* Dashboard */
+    .dash-card { padding:12px;border:1px solid #2a2a45;border-radius:8px;transition:border-color 0.15s }
+    .dash-card:hover { border-color:rgba(74,158,255,0.4) }
+    @keyframes pulse-dash { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Budget 5D */
+    .bgt-row { display:grid;grid-template-columns:1.5fr 70px 100px 110px 110px 90px;padding:6px 12px;border-bottom:1px solid rgba(42,42,69,0.5);align-items:center;cursor:pointer;transition:background 0.1s }
+    .bgt-row:hover { background:rgba(255,255,255,0.03) }
+    .bgt-row.bgt-active { background:rgba(243,156,18,0.08);border-left:2px solid #f39c12 }
+    .bgt-cell { font-size:12px;padding:2px 0 }
+    .bgt-cell-desc { display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
+    .bgt-cell-unit { text-align:center;color:#aaa;font-size:11px }
+    .bgt-cell-num { text-align:right;font-family:JetBrains Mono;font-size:11px;color:#ccc }
+    .bgt-total { font-weight:600;color:#e3e0f1 }
+    .bgt-cell-status { text-align:center }
+    .bgt-badge { font-size:9px;padding:1px 6px;border-radius:8px;font-weight:500;display:inline-block }
+    .bgt-linked { background:rgba(74,158,255,0.15);color:#4a9eff;border:1px solid rgba(74,158,255,0.3) }
+    .bgt-unlinked { background:rgba(231,76,60,0.1);color:#e74c3c;border:1px solid rgba(231,76,60,0.2) }
+    .bgt-btn { padding:4px 10px;border:1px solid #2a2a45;border-radius:4px;background:transparent;color:#aaa;cursor:pointer;font-size:11px;transition:all 0.1s }
+    .bgt-btn:hover { background:#2a2a45;color:#fff }
+    .bgt-btn-primary { background:#f39c12;color:#fff;border-color:#f39c12 }
+    .bgt-btn-primary:hover { background:#e08e0b }
+    .bgt-btn-danger { background:#e74c3c;color:#fff;border-color:#e74c3c }
+    .bgt-btn-danger:hover { background:#c0392b }
+    .bgt-input { padding:4px 6px;border:1px solid #2a2a45;border-radius:3px;background:#1a1a30;color:#e0e0e0;font-size:11px;outline:none;width:100% }
+    .bgt-input:focus { border-color:#f39c12 }
+    .bgt-input::placeholder { color:#555 }
+
     /* Empty state */
     .empty-state {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -318,7 +539,7 @@
     /* File protocol warning */
     #file-warning {
       display: none; position: fixed; inset: 0; z-index: 999;
-      background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+      background: rgba(0,0,0,0.85); backdrop-filter: var(--glass-blur);
       align-items: center; justify-content: center;
     }
     #file-warning.visible { display: flex; }
@@ -334,10 +555,40 @@
     }
     #file-warning .card .btn { margin-top: 8px; }
 
-    @media (max-width: 600px) {
-      #header .model-info { display: none; }
-      #header { padding: 4px 10px; }
-      .properties-panel { width: 280px; }
+    /* Mobile responsive */
+    .ow-handle { display:none }
+    @media (max-width: 768px) {
+      html, body { font-size: 14px }
+      #header .model-info { display: none }
+      #header .actions { gap:2px }
+      #header .actions .btn { font-size:10px;padding:4px 6px }
+      #header .actions .btn:not([id]) { display:none }
+      #header .actions #tree-btn,
+      #header .actions #measure-btn,
+      #header .actions #collision-btn,
+      #header .actions #pin-btn,
+      #header .actions #btn-load { display:inline-block }
+      #view-toolbar { bottom:64px;padding:2px 4px;gap:2px }
+      #view-toolbar .vbtn { font-size:10px;padding:4px 6px }
+      #clip-section input[type="range"] { width:40px }
+      #phase-badge { display:none }
+      #obra-dock { bottom:6px;padding:2px 4px;gap:1px }
+      #obra-dock .dock-btn { width:40px;padding:4px 0 2px }
+      #obra-dock .dock-btn .material-symbols-outlined { font-size:16px }
+      #obra-dock .dock-btn .dock-label { font-size:7px }
+      .ow-handle { display:block;width:36px;height:4px;border-radius:4px;background:#555;margin:4px auto 0;flex-shrink:0 }
+      .obra-window { position:fixed !important;bottom:0 !important;left:0 !important;right:0 !important;top:auto !important;width:100% !important;height:80vh !important;border-radius:12px 12px 0 0 !important;border-bottom:none !important;z-index:80 !important;transition:transform 0.3s ease !important }
+      .obra-window[style*="display: none"] { display:none !important;transform:translateY(100%) !important }
+      .obra-window[style*="display: none"] + .obra-window { display:block !important }
+      .bgt-row { grid-template-columns:1fr 50px 60px 70px 70px 60px;font-size:10px }
+      .bgt-cell-num { font-size:10px }
+      #bgt-form > div:first-child { grid-template-columns:1fr 1fr !important }
+      .dash-card { padding:8px }
+      .dash-card > div:first-child { font-size:9px !important }
+      .dash-card > div:nth-child(2) { font-size:16px !important }
+      .gantt-panel { width:100% !important }
+      .tree-panel { width:280px !important }
+      #issue-list { width:260px !important }
     }
   </style>
   <script>
@@ -372,17 +623,25 @@
         <span id="model-badge"></span>
         <span id="model-status">Arrastra un archivo IFC o cárgalo</span>
       </div>
+      <div class="actions" style="margin-right:auto;margin-left:12px">
+        <button class="btn btn-secondary" title="Nuevo proyecto" onclick="if(confirm('¿Limpiar todo? Se perderán los cambios no guardados.')){ObraTools.clearAll();ObraStorage._clear?.();localStorage.removeItem('obraview_schedule_rubros');location.reload()}">📄</button>
+        <button class="btn btn-secondary" title="Guardar proyecto (.obraview)" onclick="ObraProject.saveAs()">💾</button>
+        <button class="btn btn-secondary" title="Cargar proyecto (.obraview)" onclick="document.getElementById('file-load-project').click()">📂</button>
+        <input type="file" id="file-load-project" accept=".obraview" style="display:none" onchange="ObraProject.load(this.files[0]).then(()=>{alert('Proyecto cargado correctamente');location.reload()}).catch(err=>alert('Error: '+err.message))">
+      </div>
       <div class="actions">
         <button id="tree-btn" title="Explorar elementos" onclick="ObraTreePanel.togglePanel()">📋</button>
         <button id="measure-btn" class="btn btn-secondary" title="Medir distancia" onclick="ObraApp.toggleMeasure()">📏</button>
+        <button class="btn btn-secondary" title="Limpiar mediciones" onclick="ObraTools.clearAll()" style="font-size:11px">✕</button>
         <button id="collision-btn" class="btn btn-secondary" title="Detectar colisiones" onclick="ObraApp.toggleCollision()">⚡</button>
         <button id="pin-btn" class="btn btn-secondary" title="Agregar marcador" onclick="ObraApp.togglePinMode()">📌</button>
-        <button class="btn btn-secondary" title="Planificación" onclick="ObraSchedule.togglePanel()">📅</button>
+        <button class="btn btn-secondary" title="Programación" onclick="GanttView.togglePanel()">📊</button>
+        <button class="btn btn-secondary" title="Reporte PDF" onclick="ObraReportView.generateReport()">📄</button>
         <button class="btn btn-secondary" title="Lista de incidencias" onclick="ObraApp.toggleIssueList()">📋</button>
         <button class="btn btn-secondary" title="Exportar incidencias" onclick="ObraStorage.exportJSON()">⬇</button>
         <input type="file" id="file-import-issues" accept=".json" style="display:none" onchange="ObraApp.importIssues(event)">
         <button class="btn btn-secondary" title="Importar incidencias" onclick="document.getElementById('file-import-issues').click()">⬆</button>
-        <input type="file" id="file-input" accept=".ifc,.ifczip,.obj" style="display:none">
+        <input type="file" id="file-input" accept=".ifc,.ifczip,.obj,.mtl,.png,.jpg,.jpeg,.bmp,.gif" multiple style="display:none">
         <button class="btn btn-primary" id="btn-load">Cargar IFC</button>
       </div>
     </header>
@@ -392,7 +651,8 @@
         <div class="icon">🏗️</div>
         <div class="text">
           Arrastra un modelo <strong>IFC</strong> aquí<br>
-          o haz clic en <strong>"Cargar IFC"</strong>
+          o haz clic en <strong>"Cargar IFC"</strong><br>
+          <span style="font-size:11px;color:#666">OBJ + MTL + texturas también soportados</span>
         </div>
       </div>
       <div id="progress-container">
@@ -441,6 +701,7 @@
         <div class="col-results" id="col-results"></div>
       </div>
       <div id="context-menu"></div>
+      <div id="sel-rect" style="position:absolute;display:none;z-index:11;pointer-events:none;border:1px solid;border-radius:3px;background:rgba(74,158,255,0.1)"></div>
       <div id="phase-badge">Fase 3 — Carga un modelo IFC para empezar</div>
       <div id="view-toolbar">
         <button class="vbtn" data-view="default" title="Perspectiva (R)">3D</button>
@@ -448,6 +709,11 @@
         <button class="vbtn" data-view="front" title="Frontal (2)">Frontal</button>
         <button class="vbtn" data-view="side" title="Lateral (3)">Lateral</button>
         <button class="vbtn" data-view="fit" title="Encuadrar (F)">🔲</button>
+        <span class="sep"></span>
+        <button id="walk-btn" class="vbtn" title="Modo caminar (WASD + mouse)">🚶</button>
+        <button id="sim-btn" class="vbtn" title="Simulación 4D">▶</button>
+        <span class="sep"></span>
+        <button class="vbtn" title="Atajos de teclado (?)" onclick="ObraViewer.showShortcuts()">?</button>
         <span class="sep"></span>
         <div id="clip-section">
           <button class="clip-btn" data-axis="x" title="Corte X">X</button>
@@ -465,16 +731,30 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
   <script src="lib/web-ifc-api-iife.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
   <!-- Módulos ObraView -->
+  <script src="src/window-manager.js"></script>
+  <script src="src/dock.js"></script>
   <script src="src/viewer.js"></script>
   <script src="src/ifc-loader.js"></script>
   <script src="src/properties-panel.js"></script>
   <script src="src/tree-panel.js"></script>
   <script src="src/tools.js"></script>
+  <script src="src/i18n.js"></script>
   <script src="src/storage.js"></script>
-  <script src="src/schedule-panel.js"></script>
+  <script src="src/schedule-manager.js"></script>
+  <script src="src/gantt-view.js"></script>
+  <script src="src/report-view.js"></script>
+  <script src="src/budget-manager.js"></script>
+  <script src="src/budget-view.js"></script>
+  <script src="src/dashboard-view.js"></script>
+  <script src="src/collision-view.js"></script>
+  <script src="src/settings-view.js"></script>
+  <script src="src/simulation.js"></script>
+  <script src="src/project-manager.js"></script>
   <script src="src/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

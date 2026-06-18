@@ -124,11 +124,7 @@ const ObraTools = (() => {
     );
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, ObraViewer.getCamera());
-    const modelGroup = ObraViewer.getModelGroup();
-    const meshes = [];
-    modelGroup.children.forEach(child => {
-      child.traverse(node => { if (node.isMesh) meshes.push(node); });
-    });
+    const meshes = ObraViewer.getFlatMeshCache();
     if (meshes.length === 0) { clearSnapPreview(); return; }
     const hits = raycaster.intersectObjects(meshes);
     if (hits.length === 0) { clearSnapPreview(); return; }
@@ -158,11 +154,7 @@ const ObraTools = (() => {
     );
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, ObraViewer.getCamera());
-    const modelGroup = ObraViewer.getModelGroup();
-    const meshes = [];
-    modelGroup.children.forEach(child => {
-      child.traverse(node => { if (node.isMesh) meshes.push(node); });
-    });
+    const meshes = ObraViewer.getFlatMeshCache();
     if (meshes.length === 0) return null;
     const hits = raycaster.intersectObjects(meshes);
     if (hits.length === 0) return null;
@@ -200,11 +192,24 @@ const ObraTools = (() => {
     const d2 = new THREE.Mesh(dotGeo, dotMat); d2.position.copy(p2); measureGroup.add(d2);
 
     // Label sprite
-    const label = makeLabel(dist.toFixed(2) + ' m');
+    const label = makeLabel(formatDistance(dist));
     label.position.copy(mid);
     measureGroup.add(label);
 
     measurements.push({ p1, p2, dist, objects: [line, d1, d2, label] });
+  }
+
+  function formatDistance(dist) {
+    const _t = (k) => (typeof ObraI18n !== 'undefined' ? ObraI18n.__(k) : k);
+    let unit = 'm', decimals = 2, val = dist;
+    if (typeof ObraSettings !== 'undefined') {
+      unit = ObraSettings.get('measureUnit') || 'm';
+      decimals = ObraSettings.get('measureDecimals') || 2;
+    }
+    let unitLabel = _t('unitM');
+    if (unit === 'mm') { val = dist * 1000; unitLabel = _t('unitMm'); }
+    else if (unit === 'ft') { val = dist * 3.28084; unitLabel = _t('unitFt'); }
+    return val.toFixed(decimals) + ' ' + unitLabel;
   }
 
   function makeLabel(text) {
@@ -262,8 +267,8 @@ const ObraTools = (() => {
       const eid = child.userData.expressID;
       const entry = entries.get(eid);
       if (!entry) return;
-      const box = new THREE.Box3().setFromObject(child);
-      if (box.isEmpty()) return;
+      const box = ObraViewer.getBox(eid);
+      if (!box || box.isEmpty()) return;
       if (entry.typeName === typeA) elemsA.push({ eid, box, entry });
       if (entry.typeName === typeB) elemsB.push({ eid, box, entry });
     });
@@ -297,19 +302,16 @@ const ObraTools = (() => {
   }
 
   function highlightCollisionBox(expressID) {
-    const group = ObraViewer.getModelGroup();
-    group.children.forEach(child => {
-      if (child.userData.expressID !== expressID) return;
-      const box = new THREE.Box3().setFromObject(child);
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
-      const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
-      const edges = new THREE.EdgesGeometry(geo);
-      const mat = new THREE.LineBasicMaterial({ color: 0xff3333, linewidth: 2 });
-      const wireframe = new THREE.LineSegments(edges, mat);
-      wireframe.position.copy(center);
-      collisionGroup.add(wireframe);
-    });
+    const box = ObraViewer.getBox(expressID);
+    if (!box || box.isEmpty()) return;
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
+    const edges = new THREE.EdgesGeometry(geo);
+    const mat = new THREE.LineBasicMaterial({ color: 0xff3333, linewidth: 2 });
+    const wireframe = new THREE.LineSegments(edges, mat);
+    wireframe.position.copy(center);
+    collisionGroup.add(wireframe);
   }
 
   function clearCollisions() {
@@ -392,11 +394,7 @@ const ObraTools = (() => {
     );
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, ObraViewer.getCamera());
-    const modelGroup = ObraViewer.getModelGroup();
-    const meshes = [];
-    modelGroup.children.forEach(child => {
-      child.traverse(node => { if (node.isMesh) meshes.push(node); });
-    });
+    const meshes = ObraViewer.getFlatMeshCache();
 
     let pt;
     if (meshes.length > 0) {
@@ -472,8 +470,37 @@ const ObraTools = (() => {
 
   function getCount() { return measurements.length; }
 
+  function exportMeasurements() {
+    return measurements.map(m => ({ p1: { x: m.p1.x, y: m.p1.y, z: m.p1.z }, p2: { x: m.p2.x, y: m.p2.y, z: m.p2.z }, dist: m.dist }));
+  }
+
+  function importMeasurements(data) {
+    if (!data || !data.length) return;
+    if (!measureGroup) init();
+    clearAll();
+    data.forEach(d => {
+      const p1 = new THREE.Vector3(d.p1.x, d.p1.y, d.p1.z);
+      const p2 = new THREE.Vector3(d.p2.x, d.p2.y, d.p2.z);
+      const dist = d.dist;
+      const mid = p1.clone().add(p2).multiplyScalar(0.5);
+      const lineGeo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x4a9eff });
+      const line = new THREE.Line(lineGeo, lineMat);
+      measureGroup.add(line);
+      const dotGeo = new THREE.SphereGeometry(0.04, 8, 8);
+      const dotMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+      const d1 = new THREE.Mesh(dotGeo, dotMat); d1.position.copy(p1); measureGroup.add(d1);
+      const d2 = new THREE.Mesh(dotGeo, dotMat); d2.position.copy(p2); measureGroup.add(d2);
+      const label = makeLabel(formatDistance(dist));
+      label.position.copy(mid);
+      measureGroup.add(label);
+      measurements.push({ p1, p2, dist, objects: [line, d1, d2, label] });
+    });
+  }
+
   return {
     init, toggleMeasure, isActive, handleClick, clearAll, getCount,
+    exportMeasurements, importMeasurements, formatDistance,
     getTypeNames, detectCollisions, clearCollisions, getCollisions, exportCollisionsJSON,
     initMarkers, toggleMarkerMode, isMarkerMode, addMarkerAtClick, addMarkerAtPosition,
     setMarkerIssue, removeMarker, clearMarkers, getMarkers, getLastMarker, updateMarkerColor,

@@ -285,7 +285,7 @@ const ObraIfcLoader = (() => {
           meshEntries.push(entry);
         }
       } catch (e) {
-        console.warn('ObraView: error en mesh', mi, e.message);
+        console.warn('ObraView: error en mesh', expressID, e.message);
       }
     }
 
@@ -361,6 +361,7 @@ const ObraIfcLoader = (() => {
           const mesh = new THREE.Mesh(geo, mat);
           mesh.castShadow = true;
           mesh.receiveShadow = true;
+          mesh.frustumCulled = true;
           mesh.userData.expressID = expressID;
           itemGroup.add(mesh);
           hasGeo = true;
@@ -417,53 +418,117 @@ const ObraIfcLoader = (() => {
     }
   }
 
-  function loadOBJ(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const loader = new THREE.OBJLoader();
-          const obj = loader.parse(e.target.result);
-          const group = new THREE.Group();
-          const entries = new Map();
-          let meshCount = 0;
+  function readFileAsText(f) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = () => rej(new Error('No se pudo leer el archivo'));
+      r.readAsText(f);
+    });
+  }
 
-          obj.traverse(node => {
-            if (node.isMesh) {
-              const mat = new THREE.MeshStandardMaterial({
-                color: node.material && node.material.color ? node.material.color : 0x999999,
-                roughness: 0.5, metalness: 0.0, side: THREE.DoubleSide,
-              });
-              const mesh = new THREE.Mesh(node.geometry, mat);
-              mesh.position.copy(node.position);
-              mesh.quaternion.copy(node.quaternion);
-              mesh.scale.copy(node.scale);
-              mesh.castShadow = true;
-              mesh.receiveShadow = true;
-              const eid = meshCount + 1;
-              mesh.userData.expressID = eid;
-              const itemGroup = new THREE.Group();
-              itemGroup.add(mesh);
-              itemGroup.userData.expressID = eid;
-              itemGroup.userData.name = node.name || `OBJ_${eid}`;
-              itemGroup.userData.typeName = 'OBJMesh';
-              group.add(itemGroup);
-              entries.set(eid, {
-                expressID: eid, typeId: 0, typeName: 'OBJMesh',
-                name: node.name || `OBJ_${eid}`, storey: '',
-                mesh: itemGroup, properties: null,
-              });
-              meshCount++;
-            }
-          });
+  function loadOBJ(objFile, companionFiles) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const objText = await readFileAsText(objFile);
 
-          resolve({ modelID: -1, modelName: file.name.replace(/\.obj$/i, ''), entries, storeys: [], itemCount: meshCount });
-        } catch (err) {
-          reject(err);
+        // Detect MTL references in OBJ
+        const mtlRefs = [];
+        const mtlLibRegex = /mtllib\s+(.+)/gi;
+        let mtlMatch;
+        while ((mtlMatch = mtlLibRegex.exec(objText)) !== null) {
+          mtlRefs.push(mtlMatch[1].trim());
         }
-      };
-      reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
-      reader.readAsText(file);
+
+        let materials = null;
+        const files = companionFiles || [];
+
+        // Parse MTL if references found and MTLLoader available
+        if (mtlRefs.length > 0 && typeof THREE.MTLLoader !== 'undefined') {
+          const mtlFiles = mtlRefs.map(ref => files.find(f =>
+            f.name === ref || f.name.toLowerCase() === ref.toLowerCase()
+          )).filter(Boolean);
+
+          if (mtlFiles.length > 0) {
+            const mtlTexts = await Promise.all(mtlFiles.map(f => readFileAsText(f)));
+            const mtlLoader = new THREE.MTLLoader();
+            materials = mtlLoader.parse(mtlTexts.join('\n'));
+
+            // Load texture images referenced in materials
+            const texFiles = files.filter(f => /\.(jpg|jpeg|png|bmp|gif|tga)$/i.test(f.name));
+            for (const matName in materials.materials) {
+              const mat = materials.materials[matName];
+              if (mat.map && typeof mat.map === 'string') {
+                const texFile = texFiles.find(f =>
+                  f.name === mat.map || f.name.toLowerCase() === mat.map.toLowerCase()
+                );
+                if (texFile) {
+                  const img = new Image();
+                  const url = URL.createObjectURL(texFile);
+                  img.onload = () => {
+                    const tex = new THREE.Texture(img);
+                    tex.needsUpdate = true;
+                    mat.map = tex;
+                    URL.revokeObjectURL(url);
+                  };
+                  img.src = url;
+                }
+              }
+            }
+          }
+        }
+
+        // Parse OBJ with or without materials
+        const loader = new THREE.OBJLoader();
+        if (materials) loader.setMaterials(materials);
+        const obj = loader.parse(objText);
+
+        const group = new THREE.Group();
+        const entries = new Map();
+        let meshCount = 0;
+
+        obj.traverse(node => {
+          if (node.isMesh) {
+            const srcMat = node.material;
+            // Use original material (from MTL/OBJ) instead of creating new one
+            const mat = srcMat && srcMat.color
+              ? srcMat
+              : new THREE.MeshStandardMaterial({
+                  color: 0x999999, roughness: 0.5, metalness: 0.0, side: THREE.DoubleSide,
+                });
+            // Ensure basic properties
+            mat.roughness = mat.roughness !== undefined ? mat.roughness : 0.5;
+            mat.metalness = mat.metalness !== undefined ? mat.metalness : 0.0;
+            mat.side = THREE.DoubleSide;
+
+            const mesh = new THREE.Mesh(node.geometry, mat);
+            mesh.position.copy(node.position);
+            mesh.quaternion.copy(node.quaternion);
+            mesh.scale.copy(node.scale);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.frustumCulled = true;
+            const eid = meshCount + 1;
+            mesh.userData.expressID = eid;
+            const itemGroup = new THREE.Group();
+            itemGroup.add(mesh);
+            itemGroup.userData.expressID = eid;
+            itemGroup.userData.name = node.name || `OBJ_${eid}`;
+            itemGroup.userData.typeName = 'OBJMesh';
+            group.add(itemGroup);
+            entries.set(eid, {
+              expressID: eid, typeId: 0, typeName: 'OBJMesh',
+              name: node.name || `OBJ_${eid}`, storey: '',
+              mesh: itemGroup, properties: null,
+            });
+            meshCount++;
+          }
+        });
+
+        resolve({ modelID: -1, modelName: objFile.name.replace(/\.obj$/i, ''), entries, storeys: [], itemCount: meshCount });
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 

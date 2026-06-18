@@ -6,6 +6,7 @@ const ObraApp = (() => {
     loading: false,
     entries: null,
     selectedId: null,
+    selectedIds: [],
   };
 
   function init() {
@@ -16,7 +17,8 @@ const ObraApp = (() => {
     ObraViewer.init(container);
     initialized = true;
     container.classList.remove('loading');
-    document.getElementById('version-badge').textContent = 'Fase 3';
+    ObraI18n.init();
+    document.getElementById('version-badge').textContent = ObraI18n.__('phase3');
 
     setupFileInput();
     setupDragDrop(container);
@@ -25,6 +27,8 @@ const ObraApp = (() => {
     setupTooltipHover(container);
     setupContextMenu(container);
     setupClipping();
+    setupBoxSelect(container);
+    setupFloatingWindows(container);
   }
 
   function setupFileInput() {
@@ -34,9 +38,9 @@ const ObraApp = (() => {
 
     btn.addEventListener('click', () => input.click());
     input.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      await loadModel(file);
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      await loadModel(files);
       input.value = '';
     });
   }
@@ -52,10 +56,9 @@ const ObraApp = (() => {
     container.addEventListener('drop', async (e) => {
       e.preventDefault();
       container.style.outline = 'none';
-      const file = e.dataTransfer.files[0];
-      if (file && (file.name.endsWith('.ifc') || file.name.endsWith('.ifczip') || file.name.endsWith('.obj'))) {
-        await loadModel(file);
-      }
+      const files = e.dataTransfer.files;
+      if (!files || files.length === 0) return;
+      await loadModel(files);
     });
   }
 
@@ -71,35 +74,55 @@ const ObraApp = (() => {
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, ObraViewer.getCamera());
-      const modelGroup = ObraViewer.getModelGroup();
-      const meshes = [];
-      modelGroup.children.forEach(child => {
-        child.traverse(node => { if (node.isMesh) meshes.push(node); });
-      });
-
+      const meshes = ObraViewer.getFlatMeshCache();
       if (meshes.length === 0) return;
       const intersects = raycaster.intersectObjects(meshes);
-
-      ObraViewer.clearHighlight();
 
       if (intersects.length > 0) {
         let hit = intersects[0].object;
         while (hit.parent && !hit.userData.expressID) hit = hit.parent;
         const id = hit.userData.expressID;
         if (id && state.entries && state.entries.has(id)) {
-          state.selectedId = id;
-          ObraViewer.highlightElement(id, 0xffaa00);
-          showProperties(id);
+          if (e.ctrlKey) {
+            const idx = state.selectedIds.indexOf(id);
+            if (idx >= 0) state.selectedIds.splice(idx, 1);
+            else state.selectedIds.push(id);
+            if (state.selectedIds.length === 0) {
+              state.selectedId = null;
+              ObraViewer.clearHighlight();
+              ObraPropertiesPanel.hide();
+            } else {
+              state.selectedId = id;
+              ObraViewer.highlightElements(state.selectedIds, 0xffaa00);
+              showProperties(id);
+            }
+          } else {
+            state.selectedIds = [id];
+            state.selectedId = id;
+            ObraViewer.highlightElement(id, 0xffaa00);
+            showProperties(id);
+          }
         }
-      } else {
+      } else if (!e.ctrlKey) {
         state.selectedId = null;
+        state.selectedIds = [];
+        ObraViewer.clearHighlight();
         ObraPropertiesPanel.hide();
       }
     });
   }
 
-  async function loadModel(file) {
+  async function loadModel(files) {
     if (state.loading) return;
+    // Handle FileList or single file
+    const fileList = files instanceof FileList ? files : (files ? [files] : []);
+    if (fileList.length === 0) return;
+    const objFile = fileList.find(f => /\.obj$/i.test(f.name));
+    const ifcFile = fileList.find(f => /\.ifc/i.test(f.name));
+    const companionFiles = [...fileList]; // all files for OBJ (MTL+textures)
+    const file = objFile || ifcFile || fileList[0];
+    if (!file) return;
+
     state.loading = true;
 
     const btn = document.getElementById('btn-load');
@@ -109,17 +132,17 @@ const ObraApp = (() => {
     const status = document.getElementById('model-status');
 
     btn.disabled = true;
-    btn.textContent = 'Cargando…';
+    btn.textContent = ObraI18n.__('loading');
     progressContainer.style.display = 'block';
     progress.style.width = '0%';
-    status.textContent = 'Inicializando motor IFC…';
+    status.textContent = ObraI18n.__('statusLoadingIfc');
 
     try {
-      const isOBJ = /\.obj$/i.test(file.name);
+      const isOBJ = objFile && /\.obj$/i.test(objFile.name);
       let result, group;
       if (isOBJ) {
-        status.textContent = 'Cargando OBJ…';
-        result = await ObraIfcLoader.loadOBJ(file);
+        status.textContent = ObraI18n.__('statusLoadingObj');
+        result = await ObraIfcLoader.loadOBJ(objFile, companionFiles);
         currentModel = result;
         state.entries = result.entries;
         ObraViewer.removeDemoCube();
@@ -130,13 +153,13 @@ const ObraApp = (() => {
         }
       } else {
         await ObraIfcLoader.init();
-        status.textContent = 'Leyendo archivo…';
+        status.textContent = ObraI18n.__('statusReading');
         result = await ObraIfcLoader.loadFile(file, (pct) => {
           progress.style.width = `${pct * 50}%`;
         });
         currentModel = result;
         state.entries = result.entries;
-        status.textContent = 'Generando geometría 3D…';
+        status.textContent = ObraI18n.__('statusGenerating');
         ObraViewer.removeDemoCube();
         ObraViewer.clearModel();
         group = await ObraIfcLoader.generateMeshes(result.modelID, result.entries, (pct) => {
@@ -149,7 +172,7 @@ const ObraApp = (() => {
       ObraViewer.addModel(group);
 
       if (meshCount === 0) {
-        status.textContent = `⚠ ${result.itemCount} elementos encontrados, pero ninguno con geometría visible. Puede ser un modelo sin geometría 3D.`;
+        status.textContent = ObraI18n.__('statusNoGeo', { count: result.itemCount });
         status.style.color = '#ffaa00';
         setTimeout(() => { status.style.color = ''; }, 5000);
       } else {
@@ -157,18 +180,18 @@ const ObraApp = (() => {
       }
 
       ObraTreePanel.build(result.entries);
-      ObraSchedule.init(result.entries);
+      ObraScheduleManager.init(result.entries);
 
       badge.textContent = result.modelName;
-      status.textContent = `${result.itemCount} elementos · ${meshCount} con geometría 3D`;
+      status.textContent = ObraI18n.__('statusSummary', { count: result.itemCount, meshCount });
       progress.style.width = '100%';
       setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
 
       document.getElementById('phase-badge').textContent =
-        `Fase 3 — ${result.modelName} · ${meshCount} mallas 3D`;
+        ObraI18n.__('statusModelLoaded', { name: result.modelName, meshCount });
 
     } catch (err) {
-      status.textContent = `Error: ${err.message || 'No se pudo cargar el archivo'}`;
+      status.textContent = ObraI18n.__('statusLoadError', { msg: err.message || '' });
       console.error(err);
       setTimeout(() => { progressContainer.style.display = 'none'; }, 3000);
     } finally {
@@ -193,18 +216,42 @@ const ObraApp = (() => {
   }
 
   function setupToolbar() {
-    document.querySelectorAll('#view-toolbar .vbtn').forEach(btn => {
+    document.querySelectorAll('#view-toolbar .vbtn[data-view]').forEach(btn => {
       btn.addEventListener('click', () => {
         const view = btn.dataset.view;
         if (view === 'fit') {
           ObraViewer.fitToModel();
         } else {
-          document.querySelectorAll('#view-toolbar .vbtn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('#view-toolbar .vbtn[data-view]').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           ObraViewer.setView(view);
         }
       });
     });
+    const walkBtn = document.getElementById('walk-btn');
+    if (walkBtn) {
+      walkBtn.addEventListener('click', () => {
+        ObraViewer.toggleWalkMode();
+        walkBtn.classList.toggle('active');
+        if (ObraViewer.isWalkMode()) {
+          ObraViewer.setEyeLevel(ObraSettings.get('eyeLevel') || 1.6);
+        }
+      });
+    }
+    const simBtn = document.getElementById('sim-btn');
+    if (simBtn) {
+      simBtn.addEventListener('click', () => {
+        const win = ObraWindowManager.get('simulation');
+        if (!win) return;
+        if (win.el.style.display === 'none') {
+          ObraSimControls.init();
+        } else {
+          ObraViewer.pauseSimulation();
+          ObraViewer.clearScheduleColors();
+          ObraWindowManager.hide('simulation');
+        }
+      });
+    }
   }
 
   function toggleMeasure() {
@@ -264,6 +311,210 @@ const ObraApp = (() => {
     });
   }
 
+  let boxSelectStart = null;
+  let boxSelectRect = null;
+
+  function setupBoxSelect(container) {
+    const rectEl = document.getElementById('sel-rect');
+    const camera = ObraViewer.getCamera();
+
+    container.addEventListener('mousedown', (e) => {
+      if (state.loading || e.button !== 0 || e.ctrlKey) return;
+      if (ObraTools && ObraTools.isActive && ObraTools.isActive()) return;
+      boxSelectStart = { x: e.clientX, y: e.clientY };
+      boxSelectRect = null;
+    });
+
+    container.addEventListener('mousemove', (e) => {
+      if (!boxSelectStart || !rectEl) return;
+      const dx = e.clientX - boxSelectStart.x;
+      const dy = e.clientY - boxSelectStart.y;
+      if (Math.abs(dx) < 4 && Math.abs(dy) < 4) { rectEl.style.display = 'none'; return; }
+      const rect = container.getBoundingClientRect();
+      const left = Math.min(boxSelectStart.x, e.clientX) - rect.left;
+      const top = Math.min(boxSelectStart.y, e.clientY) - rect.top;
+      const w = Math.abs(dx);
+      const h = Math.abs(dy);
+      const ltr = dx >= 0;
+      rectEl.style.left = left + 'px';
+      rectEl.style.top = top + 'px';
+      rectEl.style.width = w + 'px';
+      rectEl.style.height = h + 'px';
+      rectEl.style.borderColor = ltr ? '#4a9eff' : '#2ecc71';
+      rectEl.style.background = ltr ? 'rgba(74,158,255,0.1)' : 'rgba(46,204,113,0.1)';
+      rectEl.style.display = 'block';
+      boxSelectRect = { left, top, w, h, ltr, clientLeft: left + rect.left, clientTop: top + rect.top };
+    });
+
+    container.addEventListener('mouseup', (e) => {
+      if (!boxSelectStart || !boxSelectRect) { boxSelectStart = null; if (rectEl) rectEl.style.display = 'none'; return; }
+      if (rectEl) rectEl.style.display = 'none';
+      const r = boxSelectRect;
+      boxSelectStart = null;
+      boxSelectRect = null;
+      if (r.w < 10 || r.h < 10) return;
+
+      const rect = container.getBoundingClientRect();
+      const ndcMin = { x: (r.left / rect.width) * 2 - 1, y: -((r.top + r.h) / rect.height) * 2 + 1 };
+      const ndcMax = { x: ((r.left + r.w) / rect.width) * 2 - 1, y: -(r.top / rect.height) * 2 + 1 };
+
+      const eids = ObraViewer.selectByRect(camera, ndcMin, ndcMax, state.entries, r.ltr);
+      if (eids.length > 0) {
+        state.selectedIds = eids;
+        state.selectedId = eids[0];
+        ObraViewer.highlightElements(eids, 0xffaa00);
+        state.entries.get(eids[0]) ? showProperties(eids[0]) : null;
+      } else {
+        state.selectedIds = [];
+        state.selectedId = null;
+        ObraViewer.clearHighlight();
+        ObraPropertiesPanel.hide();
+      }
+    });
+  }
+
+  function setupFloatingWindows(container) {
+    ObraDock.init();
+
+    const _t = (k, p) => (typeof ObraI18n !== 'undefined' ? ObraI18n.__(k, p) : k);
+    const panelConfigs = {
+      tree: { title: _t('panelTree'), accent: '#9b59b6', icon: 'account_tree', x: 20, y: 60, w: 300, h: 500 },
+      properties: { title: _t('panelProperties'), accent: '#f39c12', icon: 'info', x: 340, y: 60, w: 320, h: 420 },
+      gantt: { title: _t('panelGantt'), accent: '#4a9eff', icon: 'timeline', x: 680, y: 60, w: 660, h: 480 },
+      issues: { title: _t('panelIssues'), accent: '#e74c3c', icon: 'error_outline', x: 100, y: 140, w: 300, h: 420 },
+      budget: { title: _t('panelBudget'), accent: '#f39c12', icon: 'payments', x: 400, y: 80, w: 720, h: 520 },
+      dashboard: { title: _t('panelDashboard'), accent: '#10b981', icon: 'monitoring', x: 100, y: 40, w: 860, h: 580 },
+      simulation: { title: _t('panelSimulation'), accent: '#4a9eff', icon: 'speed', x: 200, y: 300, w: 420, h: 100, minimizable: true, closable: true },
+      collision: { title: _t('panelCollision'), accent: '#e67e22', icon: 'search_check', x: 300, y: 120, w: 420, h: 400 },
+      settings: { title: _t('panelSettings'), accent: '#888', icon: 'settings', x: 500, y: 200, w: 340, h: 340, minimizable: true, closable: true },
+    };
+
+    // Create windows and dock buttons
+    Object.keys(panelConfigs).forEach((id, i) => {
+      const c = panelConfigs[id];
+      const win = ObraWindowManager.createWindow({
+        id, title: c.title, accent: c.accent,
+        x: c.x + i * 20, y: c.y + i * 20, width: c.w, height: c.h, body: '',
+      });
+      win.opts.onShow = () => ObraDock.setOpen(id, true);
+      win.opts.onHide = () => ObraDock.setOpen(id, false);
+      ObraDock.addItem(id, {
+        icon: c.icon, label: c.title, accent: c.accent,
+        onClick: () => {
+          if (id === 'properties' && !ObraPropertiesPanel._hasContent) return;
+          ObraWindowManager.toggle(id);
+          ObraDock.setOpen(id, ObraWindowManager.get(id) && !(ObraWindowManager.get(id).el.style.display === 'none'));
+        },
+      });
+    });
+
+    // Helper: style an element to fill a floating window body
+    function absorbPanel(el, winBody) {
+      if (!el || el.parentNode === winBody) return;
+      el.classList.add('ow-absorbed');
+      if (!el.classList.contains('visible')) el.classList.add('visible');
+      winBody.appendChild(el);
+    }
+
+    // MutationObserver: watch for dynamically-created panel elements
+    const panelSelectors = {
+      tree: '#tree-panel',
+      properties: '#properties-panel',
+      gantt: '#schedule-panel',
+      issues: '#issue-list',
+      collision: '#collision-panel',
+    };
+    const obs = new MutationObserver(() => {
+      Object.keys(panelSelectors).forEach(id => {
+        const win = ObraWindowManager.get(id);
+        if (!win) return;
+        const el = document.querySelector(panelSelectors[id]);
+        if (el && el.parentNode !== win.body) absorbPanel(el, win.body);
+      });
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+
+    // Initial absorption for elements that already exist
+    Object.keys(panelSelectors).forEach(id => {
+      const win = ObraWindowManager.get(id);
+      if (!win) return;
+      const el = document.querySelector(panelSelectors[id]);
+      if (el) absorbPanel(el, win.body);
+    });
+
+    // Override panel toggle functions to use floating windows
+    if (ObraTreePanel && ObraTreePanel.togglePanel) {
+      ObraTreePanel.togglePanel = function() {
+        if (!document.getElementById('tree-panel')) ObraTreePanel.render();
+        ObraWindowManager.toggle('tree');
+      };
+    }
+    if (GanttView && GanttView.togglePanel) {
+      GanttView.togglePanel = function() {
+        if (!document.getElementById('gantt-panel')) GanttView.render();
+        ObraWindowManager.toggle('gantt');
+      };
+    }
+
+    // Hook collision
+    const colWin = ObraWindowManager.get('collision');
+    if (colWin) {
+      colWin.opts.onShow = function() { ObraDock.setOpen('collision', true); };
+      colWin.opts.onHide = function() { ObraDock.setOpen('collision', false); };
+    }
+
+    // Hook simulation window: hide by default, no dock button (accessed via toolbar)
+    const simWin = ObraWindowManager.get('simulation');
+    if (simWin) {
+      simWin.opts.onShow = function() { ObraDock.setOpen('simulation', true); };
+      simWin.opts.onHide = function() { ObraDock.setOpen('simulation', false); ObraViewer.pauseSimulation(); };
+      ObraWindowManager.hide('simulation');
+    }
+
+    // Hook dashboard
+    const dashWin = ObraWindowManager.get('dashboard');
+    if (dashWin) {
+      dashWin.opts.onShow = function() { ObraDock.setOpen('dashboard', true); ObraDashboard.render(); };
+      dashWin.opts.onHide = function() { ObraDock.setOpen('dashboard', false); };
+    }
+
+    // Hook budget: render on first show
+    const budgetWin = ObraWindowManager.get('budget');
+    if (budgetWin) {
+      budgetWin.opts.onShow = function() {
+        ObraDock.setOpen('budget', true);
+        ObraBudgetView.render();
+      };
+      budgetWin.opts.onHide = function() { ObraDock.setOpen('budget', false); };
+    }
+
+    // Initialize settings and hook settings window
+    ObraSettings.init();
+    const setWin = ObraWindowManager.get('settings');
+    if (setWin) {
+      setWin.opts.onShow = function() {
+        ObraDock.setOpen('settings', true);
+        ObraSettings.buildPanelUI(setWin.body);
+      };
+      setWin.opts.onHide = function() { ObraDock.setOpen('settings', false); };
+    }
+
+    // Hook properties panel show/hide
+    const origPropShow = ObraPropertiesPanel.show;
+    if (origPropShow) {
+      ObraPropertiesPanel._origShow = origPropShow;
+      ObraPropertiesPanel.show = function(entry, props) {
+        ObraPropertiesPanel._hasContent = true;
+        origPropShow.call(this, entry, props);
+        const win = ObraWindowManager.get('properties');
+        const panelEl = document.getElementById('properties-panel');
+        if (win && panelEl) absorbPanel(panelEl, win.body);
+        ObraWindowManager.show('properties');
+      };
+      ObraPropertiesPanel.hide = function() { ObraWindowManager.hide('properties'); };
+    }
+  }
+
   function setupTooltipHover(container) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -274,11 +525,7 @@ const ObraApp = (() => {
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, ObraViewer.getCamera());
-      const modelGroup = ObraViewer.getModelGroup();
-      const meshes = [];
-      modelGroup.children.forEach(child => {
-        child.traverse(node => { if (node.isMesh) meshes.push(node); });
-      });
+      const meshes = ObraViewer.getFlatMeshCache();
       if (meshes.length === 0) { ObraViewer.hideTooltip(); ObraViewer.clearHover(); hoverId = null; return; }
       const hits = raycaster.intersectObjects(meshes);
       if (hits.length > 0) {
@@ -316,10 +563,7 @@ const ObraApp = (() => {
       );
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, ObraViewer.getCamera());
-      const meshes = [];
-      modelGroup.children.forEach(child => {
-        child.traverse(node => { if (node.isMesh) meshes.push(node); });
-      });
+      const meshes = ObraViewer.getFlatMeshCache();
       const hits = raycaster.intersectObjects(meshes);
       let hitId = null;
       if (hits.length > 0) {
@@ -331,13 +575,14 @@ const ObraApp = (() => {
       let html = '';
       if (hitId && state.entries.has(hitId)) {
         const entry = state.entries.get(hitId);
-        html += `<div class="ctx-item" data-action="select" data-eid="${hitId}">🎯 Seleccionar</div>`;
-        html += `<div class="ctx-item" data-action="isolate" data-eid="${hitId}">🔍 Aislar</div>`;
-        html += `<div class="ctx-item" data-action="hide" data-eid="${hitId}">👁 Ocultar</div>`;
-        html += `<div class="ctx-item" data-action="pin" data-eid="${hitId}">📌 Agregar incidencia</div>`;
+        html += `<div class="ctx-item" data-action="select" data-eid="${hitId}">${ObraI18n.__('ctxSelect')}</div>`;
+        html += `<div class="ctx-item" data-action="select-similar" data-type="${entry.typeName}" data-name="${entry.name}">${ObraI18n.__('ctxSelectSimilar')}</div>`;
+        html += `<div class="ctx-item" data-action="isolate" data-eid="${hitId}">${ObraI18n.__('ctxIsolate')}</div>`;
+        html += `<div class="ctx-item" data-action="hide" data-eid="${hitId}">${ObraI18n.__('ctxHide')}</div>`;
+        html += `<div class="ctx-item" data-action="pin" data-eid="${hitId}">${ObraI18n.__('ctxAddIssue')}</div>`;
         html += `<div class="ctx-divider"></div>`;
       }
-      html += `<div class="ctx-item" data-action="showall">👁 Mostrar todo</div>`;
+      html += `<div class="ctx-item" data-action="showall">${ObraI18n.__('ctxShowAll')}</div>`;
       menu.innerHTML = html;
       menu.style.left = Math.min(e.clientX - rect.left, rect.width - 180) + 'px';
       menu.style.top = Math.min(e.clientY - rect.top, rect.height - 200) + 'px';
@@ -353,8 +598,22 @@ const ObraApp = (() => {
       const eid = item.dataset.eid ? parseInt(item.dataset.eid) : null;
       switch (action) {
         case 'select':
-          if (eid) { state.selectedId = eid; ObraViewer.clearHighlight(); ObraViewer.highlightElement(eid, 0xffaa00); showProperties(eid); }
+          if (eid) { state.selectedId = eid; state.selectedIds = [eid]; ObraViewer.clearHighlight(); ObraViewer.highlightElement(eid, 0xffaa00); showProperties(eid); }
           break;
+        case 'select-similar': {
+          const typeName = item.dataset.type;
+          const similar = [];
+          for (const [, entry] of state.entries) {
+            if (entry.typeName === typeName) similar.push(entry.expressID);
+          }
+          state.selectedIds = similar;
+          if (similar.length > 0) {
+            state.selectedId = similar[0];
+            ObraViewer.highlightElements(similar, 0xffaa00);
+            showProperties(similar[0]);
+          }
+          break;
+        }
         case 'isolate':
           if (eid) ObraViewer.isolateElement(eid);
           break;
@@ -391,6 +650,12 @@ const ObraApp = (() => {
   }
 
   function toggleCollision() {
+    const win = ObraWindowManager.get('collision');
+    if (win) {
+      if (win.el.style.display !== 'none') { ObraWindowManager.hide('collision'); return; }
+      ObraCollisionView.open();
+      return;
+    }
     const panel = document.getElementById('collision-panel');
     const isOpen = panel.classList.toggle('visible');
     if (isOpen && state.entries) {
@@ -518,6 +783,14 @@ const ObraApp = (() => {
   });
 
   function toggleIssueList() {
+    const win = ObraWindowManager.get('issues');
+    if (win) {
+      const showing = win.el.style.display !== 'none';
+      if (showing) { ObraWindowManager.hide('issues'); return; }
+      ObraWindowManager.show('issues');
+      renderIssueList();
+      return;
+    }
     const panel = document.getElementById('issue-list');
     panel.classList.toggle('visible');
     if (panel.classList.contains('visible')) renderIssueList();
@@ -568,11 +841,12 @@ const ObraApp = (() => {
   function getCurrentModel() { return currentModel; }
   function getEntries() { return state.entries; }
   function getSelectedId() { return state.selectedId; }
+  function getSelectedIds() { return state.selectedIds; }
 
   document.addEventListener('DOMContentLoaded', init);
 
   return {
-    init, loadModel, getCurrentModel, getEntries, getSelectedId,
+    init, loadModel, getCurrentModel, getEntries, getSelectedId, getSelectedIds,
     toggleMeasure, toggleCollision, runCollision, clearCollision, exportCollision,
     togglePinMode, saveIssue, cancelIssue, toggleIssueList, importIssues, editIssue,
   };
