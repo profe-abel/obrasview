@@ -115,7 +115,7 @@ const ObraApp = (() => {
   async function loadModel(files) {
     if (state.loading) return;
     // Handle FileList or single file
-    const fileList = files instanceof FileList ? files : (files ? [files] : []);
+    const fileList = files instanceof FileList ? Array.from(files) : (Array.isArray(files) ? files : files ? [files] : []);
     if (fileList.length === 0) return;
     const objFile = fileList.find(f => /\.obj$/i.test(f.name));
     const ifcFile = fileList.find(f => /\.ifc/i.test(f.name));

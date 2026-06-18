@@ -579,15 +579,16 @@ const ObraViewer = (() => {
         case '/':
           showShortcuts();
           break;
-        case 'escape':
-          if (walkMode) { exitWalkMode(); return; }
-          if (document.getElementById('shortcuts-modal')?.style.display !== 'none') {
-            document.getElementById('shortcuts-modal').style.display = 'none';
-            return;
-          }
-          ObraViewer.clearHighlight();
-          ObraPropertiesPanel && ObraPropertiesPanel.hide();
-          break;
+      case 'escape':
+        if (walkMode) { exitWalkMode(); return; }
+        const modal = document.getElementById('shortcuts-modal');
+        if (modal && modal.style.display !== 'none') {
+          modal.style.display = 'none';
+          return;
+        }
+        ObraViewer.clearHighlight();
+        ObraPropertiesPanel && ObraPropertiesPanel.hide();
+        break;
       }
     });
   }
@@ -675,7 +676,7 @@ const ObraViewer = (() => {
       new THREE.Vector3(ndcMin.x, ndcMax.y, 1),
     ];
     const worldCorners = corners.map(v => v.applyMatrix4(invProj).applyMatrix4(cam.matrixWorld));
-    const selFrustum = new THREE.Frustum().setFromPoints(worldCorners);
+    const selBox = new THREE.Box3().setFromPoints(worldCorners);
 
     const result = [];
     for (const [expressID] of entries) {
@@ -683,10 +684,10 @@ const ObraViewer = (() => {
       if (!child || !child.visible) continue;
       const box = getBox(expressID);
       if (!box || box.isEmpty()) continue;
-      const inFrustum = selFrustum.intersectsBox(box);
-      if (!inFrustum) continue;
+      const intersects = selBox.intersectsBox(box);
+      if (!intersects) continue;
       if (ltr) {
-        const fullyInside = selFrustum.containsBox(box);
+        const fullyInside = selBox.containsBox(box);
         if (fullyInside) result.push(expressID);
       } else {
         result.push(expressID);

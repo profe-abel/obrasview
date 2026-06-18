@@ -13,6 +13,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
   <title>ObraView — Visor BIM 3D</title>
   <style>
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+    }
+
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
@@ -223,9 +233,15 @@
     .gg-bar-row { display: flex; align-items: flex-start; margin-bottom: 2px; position: relative; min-height: 36px; }
     .gg-bar-label { width: 80px; font-size: 10px; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-top: 4px; }
     .gg-bar-track { flex: 1; position: relative; }
-    .gg-bar { position: absolute; top: 0; height: 16px; border-radius: 3px; min-width: 4px; opacity: 0.85; cursor: pointer; overflow: hidden; }
+    .gg-bar { position: absolute; top: 0; height: 16px; border-radius: 3px; min-width: 4px; opacity: 0.85; cursor: pointer; overflow: hidden; background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.15)); }
     .gg-bar:hover { opacity: 1; }
-    .gg-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.25); pointer-events: none; }
+    .gg-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(135deg, #4a9eff, #3a8eef); pointer-events: none; }
+    .gg-bar-label { font-family: 'JetBrains Mono', monospace !important; }
+    /* Gantt progress bars - enhanced style */
+    .gg-bar { box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); }
+    .gg-bar:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.3); transform: translateY(-1px); }
+    .gg-bar-fill { background: linear-gradient(135deg, #4a9eff, #3a8eef); box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2); }
+    .gg-tick { font-family: 'JetBrains Mono', monospace !important; }
     .gg-bar-handle { position: absolute; top: -2px; width: 6px; height: 20px; cursor: ew-resize; background: rgba(255,255,255,0.3); border-radius: 2px; opacity: 0; transition: opacity 0.15s; }
     .gg-bar:hover .gg-bar-handle { opacity: 1; }
     .gg-handle-left { left: -3px; }
@@ -396,6 +412,14 @@
       display: flex; justify-content: space-between; padding: 3px 0;
       border-bottom: 1px solid #2a2a45;
     }
+    #collision-panel .col-severity {
+      display: inline-block; padding: 1px 8px; border-radius: 12px;
+      font-size: 9px; font-weight: 600; margin-left: 4px; backdrop-filter: blur(4px);
+    }
+    #collision-panel .col-severity-critical { background: rgba(231,76,60,0.2); color: #e74c3c; border: 1px solid rgba(231,76,60,0.4); }
+    #collision-panel .col-severity-high { background: rgba(230,126,34,0.2); color: #e67e22; border: 1px solid rgba(230,126,34,0.4); }
+    #collision-panel .col-severity-medium { background: rgba(243,156,18,0.2); color: #f39c12; border: 1px solid rgba(243,156,18,0.4); }
+    #collision-panel .col-severity-low { background: rgba(52,152,219,0.2); color: #3498db; border: 1px solid rgba(52,152,219,0.4); }
 
     /* Drop zone hint */
     #viewer-container.dragover::after {
@@ -499,22 +523,38 @@
     .sim-btn:hover { background:#2a2a45;color:#fff }
     .sim-btn-active { background:#4a9eff;color:#fff;border-color:#4a9eff }
 
-    /* Dashboard */
-    .dash-card { padding:12px;border:1px solid #2a2a45;border-radius:8px;transition:border-color 0.15s }
-    .dash-card:hover { border-color:rgba(74,158,255,0.4) }
+    /* Dashboard - KPI Cards */
+    .dash-card { padding:12px;border:1px solid #2a2a45;border-radius:8px;transition:all 0.2s ease;backdrop-filter:blur(8px);background:rgba(26,26,48,0.5); }
+    .dash-card:hover { border-color:rgba(74,158,255,0.4);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+    .dash-card > div:first-child { font-family:'JetBrains Mono', monospace;font-size:20px;font-weight:600;margin-bottom:4px; }
+    .dash-card > div:nth-child(2) { font-size:13px;color:#888;font-weight:500;margin-bottom:2px; }
+    .dash-card > div:nth-child(3) { font-size:10px;color:#555;background:rgba(42,42,69,0.3);padding:2px 6px;border-radius:4px;display:inline-block; }
     @keyframes pulse-dash { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    /* Budget 5D */
-    .bgt-row { display:grid;grid-template-columns:1.5fr 70px 100px 110px 110px 90px;padding:6px 12px;border-bottom:1px solid rgba(42,42,69,0.5);align-items:center;cursor:pointer;transition:background 0.1s }
-    .bgt-row:hover { background:rgba(255,255,255,0.03) }
-    .bgt-row.bgt-active { background:rgba(243,156,18,0.08);border-left:2px solid #f39c12 }
+    /* S-curve chart */
+    .scurve-chart { position:relative;height:200px;margin:12px 0; }
+    .scurve-line { position:absolute;bottom:0;left:0;right:0;height:180px;border-bottom:1px solid #2a2a45;border-left:1px solid #2a2a45; }
+    .scurve-axis { position:absolute;bottom:0;left:0;right:0;height:20px;display:flex;justify-content:space-between;padding:0 4px;font-size:9px;color:#555; }
+    .scurve-grid { position:absolute;top:0;bottom:0;left:0;right:0;pointer-events:none;z-index:1; }
+    .scurve-grid-line { position:absolute;left:25%;width:1px;height:100%;background:rgba(42,42,69,0.3); }
+    .scurve-point { position:absolute;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);z-index:2; }
+    .scurve-point.active { box-shadow:0 0 8px currentColor; }
+    .scurve-tooltip { position:absolute;background:rgba(22,22,42,0.95);border:1px solid #2a2a45;border-radius:6px;padding:8px;pointer-events:none;z-index:10;display:none; }
+
+    /* Gantt tick labels - use JetBrains Mono for time scale */
+    .gg-tick { font-family:'JetBrains Mono', monospace !important; }
+
+    /* Budget 5D - Modern table style */
+    .bgt-row { display:grid;grid-template-columns:1.5fr 70px 100px 110px 110px 90px;padding:8px 12px;border-bottom:1px solid rgba(42,42,69,0.3);align-items:center;cursor:pointer;transition:all 0.2s ease; }
+    .bgt-row:hover { background:rgba(255,255,255,0.05) }
+    .bgt-row.bgt-active { background:rgba(243,156,18,0.1);border-left:2px solid #f39c12 }
     .bgt-cell { font-size:12px;padding:2px 0 }
     .bgt-cell-desc { display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
     .bgt-cell-unit { text-align:center;color:#aaa;font-size:11px }
-    .bgt-cell-num { text-align:right;font-family:JetBrains Mono;font-size:11px;color:#ccc }
+    .bgt-cell-num { text-align:right;font-family:'JetBrains Mono', monospace;font-size:11px;color:#ccc }
     .bgt-total { font-weight:600;color:#e3e0f1 }
     .bgt-cell-status { text-align:center }
-    .bgt-badge { font-size:9px;padding:1px 6px;border-radius:8px;font-weight:500;display:inline-block }
+    .bgt-badge { font-size:9px;padding:2px 8px;border-radius:12px;font-weight:500;display:inline-block;backdrop-filter:blur(4px) }
     .bgt-linked { background:rgba(74,158,255,0.15);color:#4a9eff;border:1px solid rgba(74,158,255,0.3) }
     .bgt-unlinked { background:rgba(231,76,60,0.1);color:#e74c3c;border:1px solid rgba(231,76,60,0.2) }
     .bgt-btn { padding:4px 10px;border:1px solid #2a2a45;border-radius:4px;background:transparent;color:#aaa;cursor:pointer;font-size:11px;transition:all 0.1s }
@@ -523,8 +563,8 @@
     .bgt-btn-primary:hover { background:#e08e0b }
     .bgt-btn-danger { background:#e74c3c;color:#fff;border-color:#e74c3c }
     .bgt-btn-danger:hover { background:#c0392b }
-    .bgt-input { padding:4px 6px;border:1px solid #2a2a45;border-radius:3px;background:#1a1a30;color:#e0e0e0;font-size:11px;outline:none;width:100% }
-    .bgt-input:focus { border-color:#f39c12 }
+    .bgt-input { padding:5px 8px;border:1px solid #2a2a45;border-radius:4px;background:rgba(26,26,48,0.5);color:#e0e0e0;font-size:11px;outline:none;width:100%;backdrop-filter:blur(4px) }
+    .bgt-input:focus { border-color:#f39c12;box-shadow:0 0 0 2px rgba(243,156,18,0.2) }
     .bgt-input::placeholder { color:#555 }
 
     /* Empty state */

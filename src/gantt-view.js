@@ -305,7 +305,17 @@ const GanttView = (() => {
     html += `</div>`;
 
     html += `</div>`;
+    setTimeout(updateGanttTicks, 0);
     return html;
+  }
+
+  function updateGanttTicks() {
+    const ticks = document.querySelectorAll('.gg-tick');
+    ticks.forEach(tick => {
+      tick.style.fontFamily = 'JetBrains Mono, monospace';
+      tick.style.fontSize = '9px';
+      tick.style.color = '#555';
+    });
   }
 
   /* ==================== COLORES TAB ==================== */
@@ -962,8 +972,9 @@ const GanttView = (() => {
     // Rebuild just the gantt chart content
     const rubros = ObraScheduleManager.getRubros().filter(r => r.startDate && r.endDate);
     if (rubros.length === 0) return '<div class="gr-empty">Sin rubros con fechas.</div>';
-    const escala = ObraScheduleManager.getEscala();
+      const escala = ObraScheduleManager.getEscala();
     const sorted = [...rubros].sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
+
     let minDate = Infinity, maxDate = -Infinity;
     for (const r of sorted) {
       const s = new Date(r.startDate).getTime();
@@ -980,7 +991,14 @@ const GanttView = (() => {
       const date = new Date(minDate + d * dayMs);
       ticks.push({ left: (d / totalDays) * 100, label: date.toLocaleDateString('es-ES', escala === 'días' ? { day: '2-digit', month: '2-digit' } : { day: '2-digit', month: 'short' }) });
     }
-
+    function updateGanttTicks() {
+      const ticks = document.querySelectorAll('.gg-tick');
+      ticks.forEach(tick => {
+        tick.style.fontFamily = 'JetBrains Mono, monospace';
+        tick.style.fontSize = '9px';
+        tick.style.color = '#555';
+      });
+    }
     let html = `<div class="gg-tooltip" id="gg-tooltip"></div>`;
     html += `<div class="gg-ticks">${ticks.map(t => `<div class="gg-tick" style="left:${t.left}%">${t.label}</div>`).join('')}</div>`;
     html += `<div class="gg-grid">${ticks.map(t => `<div class="gg-gridline" style="left:${t.left}%"></div>`).join('')}</div>`;
@@ -1015,6 +1033,7 @@ const GanttView = (() => {
       </div>`;
     }
     html += `</div>`;
+    setTimeout(updateGanttTicks, 0);
     return html;
   }
 
@@ -1027,6 +1046,16 @@ const GanttView = (() => {
     panel.querySelectorAll('.gtab').forEach(el => {
       el.classList.toggle('active', el.dataset.tab === tab);
     });
+    if (tab === 'gantt') {
+      setTimeout(() => {
+        const ticks = panel.querySelectorAll('.gg-tick');
+        ticks.forEach(tick => {
+          tick.style.fontFamily = 'JetBrains Mono, monospace';
+          tick.style.fontSize = '9px';
+          tick.style.color = '#555';
+        });
+      }, 50);
+    }
   }
 
   function esc(str) {

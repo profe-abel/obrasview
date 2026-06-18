@@ -21,13 +21,14 @@ const ObraWindowManager = (() => {
       display: flex;
       flex-direction: column;
       background: rgba(22,22,42,0.9);
-      backdrop-filter: blur(12px);
-      border: 1px solid ${opts.accent || '#2a2a45'}44;
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
       min-width: 200px;
       min-height: 120px;
       overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     `;
     if (opts.accent) el.style.borderColor = opts.accent;
 
@@ -124,7 +125,7 @@ const ObraWindowManager = (() => {
       if (e.button !== 0 || e.target.closest('.ow-icon')) return;
       offsetX = e.clientX - el.offsetLeft;
       offsetY = e.clientY - el.offsetTop;
-      dragState = { el, winData, offsetX, offsetY };
+      dragState = { el, header, winData, offsetX, offsetY };
       header.style.cursor = 'grabbing';
       el.style.transition = 'none';
       e.preventDefault();
@@ -224,9 +225,13 @@ const ObraWindowManager = (() => {
     w.el.style.zIndex = ++zCounter;
     for (const key in windows) {
       const other = windows[key];
-      if (key !== id) other.el.style.borderColor = other.opts.accent ? other.opts.accent + '44' : '#2a2a45';
+      if (key !== id) {
+        other.el.style.opacity = '0.6';
+        other.el.style.borderColor = other.opts.accent ? other.opts.accent + '44' : '#2a2a45';
+      }
     }
-    if (w.opts.accent) w.el.style.borderColor = w.opts.accent;
+    w.el.style.opacity = '1';
+    w.el.style.borderColor = w.opts.accent || 'rgba(255,255,255,0.1)';
     if (typeof ObraDock !== 'undefined' && ObraDock.setActive) {
       Object.keys(windows).forEach(k => ObraDock.setActive(k, k === id));
     }
@@ -237,6 +242,12 @@ const ObraWindowManager = (() => {
     const w = windows[id];
     if (!w) return;
     w.el.style.display = 'flex';
+    w.el.style.opacity = '0';
+    w.el.style.transform = 'scale(0.95)';
+    requestAnimationFrame(() => {
+      w.el.style.opacity = '1';
+      w.el.style.transform = 'scale(1)';
+    });
     w.visible = true;
     focus(id);
     if (w.opts.onShow) w.opts.onShow(id);
@@ -245,7 +256,13 @@ const ObraWindowManager = (() => {
   function hide(id) {
     const w = windows[id];
     if (!w) return;
-    w.el.style.display = 'none';
+    w.el.style.opacity = '0';
+    w.el.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      w.el.style.display = 'none';
+      w.el.style.opacity = '';
+      w.el.style.transform = '';
+    }, 300);
     w.visible = false;
     if (w.opts.onHide) w.opts.onHide(id);
   }

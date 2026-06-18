@@ -81,32 +81,56 @@ const ObraDashboard = (() => {
         <div style="flex:1;overflow-y:auto;padding:14px">
           <!-- KPI cards -->
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+          <div class="dash-card">
+            <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">📊 Presupuesto Total</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
+              <div style="font-size:22px;font-weight:700;color:#e3e0f1">${totalBudget > 0 ? fmtShort(totalBudget) : '$ —'}</div>
+              <div style="width:28px;height:28px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center">
+                <span style="color:#10b981;font-size:14px">💰</span>
+              </div>
+            </div>
+            <div style="height:3px;background:#2a2a45;border-radius:4px;margin-top:10px;overflow:hidden">
+              <div style="height:100%;width:${cats.length > 0 ? '100' : '0'}%;background:#10b981;border-radius:4px"></div>
+            </div>
+          </div>
             <div class="dash-card">
-              <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px">Presupuesto Total</div>
-              <div style="font-size:20px;font-weight:700;color:#e3e0f1;margin-top:2px">${totalBudget > 0 ? fmtShort(totalBudget) : '$ —'}</div>
-              <div style="height:3px;background:#2a2a45;border-radius:4px;margin-top:8px;overflow:hidden">
-                <div style="height:100%;width:${cats.length > 0 ? '100' : '0'}%;background:#10b981;border-radius:4px"></div>
+              <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">⏱️ Avance General</div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
+                <div style="font-size:22px;font-weight:700;color:#e3e0f1">${kpiAvancePct}%</div>
+                <div style="width:28px;height:28px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center">
+                  <span style="color:#10b981;font-size:14px">📈</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:4px;margin-top:10px">
+                ${[0,1,2,3,4].map(i => `
+                  <div style="height:3px;flex:1;border-radius:4px;background:${i < avanceSegments ? '#10b981' : '#2a2a45'};transition:all 0.3s ease}"></div>
+                `).join('')}
               </div>
             </div>
             <div class="dash-card">
-              <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px">Avance General</div>
-              <div style="font-size:20px;font-weight:700;color:#e3e0f1;margin-top:2px">${kpiAvancePct}%</div>
-              <div style="display:flex;gap:3px;margin-top:8px">
-                ${[0,1,2,3,4].map(i => `<div style="height:3px;flex:1;border-radius:4px;background:${i < avanceSegments ? '#10b981' : '#2a2a45'}"></div>`).join('')}
+              <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">📋 Rubros Programados</div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
+                <div style="font-size:22px;font-weight:700;color:#e3e0f1">${rubroCount}</div>
+                <div style="width:28px;height:28px;background:rgba(74,158,255,0.15);border:1px solid rgba(74,158,255,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center">
+                  <span style="color:#4a9eff;font-size:14px">📊</span>
+                </div>
               </div>
-            </div>
-            <div class="dash-card">
-              <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px">Rubros Programados</div>
-              <div style="font-size:20px;font-weight:700;color:#e3e0f1;margin-top:2px">${rubroCount}</div>
-              <div style="height:3px;background:#2a2a45;border-radius:4px;margin-top:8px;overflow:hidden">
+              <div style="height:3px;background:#2a2a45;border-radius:4px;margin-top:10px;overflow:hidden">
                 <div style="height:100%;width:${rubroCount > 0 ? '100' : '0'}%;background:#4a9eff;border-radius:4px"></div>
               </div>
             </div>
             <div class="dash-card" style="border-color:${criticalIssues > 0 ? 'rgba(231,76,60,0.4)' : '#2a2a45'}">
-              <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px">Incidencias Pendientes</div>
-              <div style="font-size:20px;font-weight:700;color:${criticalIssues > 0 ? '#e74c3c' : '#e3e0f1'};margin-top:2px">${criticalIssues}</div>
-              <div style="display:flex;gap:3px;margin-top:8px">
-                ${[0,1,2].map(i => `<div style="width:8px;height:8px;border-radius:50%;background:${i === 0 && criticalIssues > 0 ? '#e74c3c' : '#2a2a45'};${i === 0 && criticalIssues > 0 ? 'animation:pulse-dash 1.5s infinite' : ''}"></div>`).join('')}
+              <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">⚠️ Incidencias Pendientes</div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
+                <div style="font-size:22px;font-weight:700;color:${criticalIssues > 0 ? '#e74c3c' : '#e3e0f1'}">${criticalIssues}</div>
+                <div style="width:28px;height:28px;background:${criticalIssues > 0 ? 'rgba(231,76,60,0.15)' : 'rgba(42,42,69,0.3)'};border:1px solid ${criticalIssues > 0 ? 'rgba(231,76,60,0.4)' : '#2a2a45'};border-radius:8px;display:flex;align-items:center;justify-content:center">
+                  <span style="color:${criticalIssues > 0 ? '#e74c3c' : '#666'};font-size:14px">🚨</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:4px;margin-top:10px">
+                ${[0,1,2].map(i => `
+                  <div style="width:8px;height:8px;border-radius:50%;background:${i === 0 && criticalIssues > 0 ? '#e74c3c' : '#2a2a45'};${i === 0 && criticalIssues > 0 ? 'animation:pulse-dash 1.5s infinite' : ''}"></div>
+                `).join('')}
               </div>
             </div>
           </div>
@@ -116,7 +140,7 @@ const ObraDashboard = (() => {
             <div style="border:1px solid #2a2a45;border-radius:8px;padding:14px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
                 <div>
-                  <div style="font-size:13px;font-weight:600">Curva S de Progreso</div>
+                  <div style="font-size:13px;font-weight:600">📈 Curva S de Progreso</div>
                   <div style="font-size:10px;color:#666">Planificado vs Real</div>
                 </div>
                 <div style="display:flex;gap:12px">

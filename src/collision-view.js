@@ -44,7 +44,7 @@ const ObraCollisionView = (() => {
             <span style="width:16px;text-align:right;color:#555">${i+1}</span>
             <span style="width:6px;height:6px;border-radius:50%;background:${sev.color};flex-shrink:0"></span>
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.a.typeName} — ${r.b.typeName}</span>
-            <span style="font-size:9px;color:${sev.color};font-weight:600;background:${sev.color}15;padding:1px 6px;border-radius:8px">${sev.label}</span>
+            <span class="col-severity ${'col-severity-' + sev.label.toLowerCase()}">${sev.label}</span>
           </div>`;
         }).join('');
 
@@ -77,6 +77,16 @@ const ObraCollisionView = (() => {
           <button class="bgt-btn" onclick="ObraCollisionView.exportJSON()" ${lastResults.length === 0 ? 'disabled style="opacity:0.4"' : ''}>Exportar JSON</button>
         </div>
       </div>`;
+    setTimeout(() => {
+      win.body.querySelectorAll('.col-severity').forEach(el => {
+        const text = el.textContent;
+        el.className = 'col-severity';
+        if (text === 'Crítica') el.classList.add('col-severity-critical');
+        else if (text === 'Alta') el.classList.add('col-severity-high');
+        else if (text === 'Media') el.classList.add('col-severity-medium');
+        else if (text === 'Baja') el.classList.add('col-severity-low');
+      });
+    }, 0);
   }
 
   function run() {
