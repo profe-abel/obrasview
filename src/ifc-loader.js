@@ -273,6 +273,7 @@ const ObraIfcLoader = (() => {
           const mesh = new THREE.Mesh(geo, mat);
           mesh.castShadow = true;
           mesh.receiveShadow = true;
+          mesh.userData.expressID = expressID;
           itemGroup.add(mesh);
           hasGeo = true;
         }
@@ -360,6 +361,7 @@ const ObraIfcLoader = (() => {
           const mesh = new THREE.Mesh(geo, mat);
           mesh.castShadow = true;
           mesh.receiveShadow = true;
+          mesh.userData.expressID = expressID;
           itemGroup.add(mesh);
           hasGeo = true;
         }
@@ -415,5 +417,55 @@ const ObraIfcLoader = (() => {
     }
   }
 
-  return { init, isReady, loadFile, generateMeshes, getProperties, closeModel };
+  function loadOBJ(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const loader = new THREE.OBJLoader();
+          const obj = loader.parse(e.target.result);
+          const group = new THREE.Group();
+          const entries = new Map();
+          let meshCount = 0;
+
+          obj.traverse(node => {
+            if (node.isMesh) {
+              const mat = new THREE.MeshStandardMaterial({
+                color: node.material && node.material.color ? node.material.color : 0x999999,
+                roughness: 0.5, metalness: 0.0, side: THREE.DoubleSide,
+              });
+              const mesh = new THREE.Mesh(node.geometry, mat);
+              mesh.position.copy(node.position);
+              mesh.quaternion.copy(node.quaternion);
+              mesh.scale.copy(node.scale);
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+              const eid = meshCount + 1;
+              mesh.userData.expressID = eid;
+              const itemGroup = new THREE.Group();
+              itemGroup.add(mesh);
+              itemGroup.userData.expressID = eid;
+              itemGroup.userData.name = node.name || `OBJ_${eid}`;
+              itemGroup.userData.typeName = 'OBJMesh';
+              group.add(itemGroup);
+              entries.set(eid, {
+                expressID: eid, typeId: 0, typeName: 'OBJMesh',
+                name: node.name || `OBJ_${eid}`, storey: '',
+                mesh: itemGroup, properties: null,
+              });
+              meshCount++;
+            }
+          });
+
+          resolve({ modelID: -1, modelName: file.name.replace(/\.obj$/i, ''), entries, storeys: [], itemCount: meshCount });
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+      reader.readAsText(file);
+    });
+  }
+
+  return { init, isReady, loadFile, generateMeshes, getProperties, closeModel, loadOBJ };
 })();

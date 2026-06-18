@@ -53,7 +53,7 @@ const ObraApp = (() => {
       e.preventDefault();
       container.style.outline = 'none';
       const file = e.dataTransfer.files[0];
-      if (file && (file.name.endsWith('.ifc') || file.name.endsWith('.ifczip'))) {
+      if (file && (file.name.endsWith('.ifc') || file.name.endsWith('.ifczip') || file.name.endsWith('.obj'))) {
         await loadModel(file);
       }
     });
@@ -84,7 +84,7 @@ const ObraApp = (() => {
 
       if (intersects.length > 0) {
         let hit = intersects[0].object;
-        while (hit.parent && hit.parent !== modelGroup) hit = hit.parent;
+        while (hit.parent && !hit.userData.expressID) hit = hit.parent;
         const id = hit.userData.expressID;
         if (id && state.entries && state.entries.has(id)) {
           state.selectedId = id;
@@ -115,23 +115,34 @@ const ObraApp = (() => {
     status.textContent = 'Inicializando motor IFC…';
 
     try {
-      await ObraIfcLoader.init();
-
-      status.textContent = 'Leyendo archivo…';
-      const result = await ObraIfcLoader.loadFile(file, (pct) => {
-        progress.style.width = `${pct * 50}%`;
-      });
-
-      currentModel = result;
-      state.entries = result.entries;
-
-      status.textContent = 'Generando geometría 3D…';
-      ObraViewer.removeDemoCube();
-      ObraViewer.clearModel();
-
-      const group = await ObraIfcLoader.generateMeshes(result.modelID, result.entries, (pct) => {
-        progress.style.width = `${pct * 100}%`;
-      });
+      const isOBJ = /\.obj$/i.test(file.name);
+      let result, group;
+      if (isOBJ) {
+        status.textContent = 'Cargando OBJ…';
+        result = await ObraIfcLoader.loadOBJ(file);
+        currentModel = result;
+        state.entries = result.entries;
+        ObraViewer.removeDemoCube();
+        ObraViewer.clearModel();
+        group = new THREE.Group();
+        for (const [, entry] of result.entries) {
+          if (entry.mesh) group.add(entry.mesh);
+        }
+      } else {
+        await ObraIfcLoader.init();
+        status.textContent = 'Leyendo archivo…';
+        result = await ObraIfcLoader.loadFile(file, (pct) => {
+          progress.style.width = `${pct * 50}%`;
+        });
+        currentModel = result;
+        state.entries = result.entries;
+        status.textContent = 'Generando geometría 3D…';
+        ObraViewer.removeDemoCube();
+        ObraViewer.clearModel();
+        group = await ObraIfcLoader.generateMeshes(result.modelID, result.entries, (pct) => {
+          progress.style.width = `${pct * 100}%`;
+        });
+      }
 
       const meshCount = group.children.length;
       document.querySelector('.empty-state')?.remove();
@@ -270,7 +281,7 @@ const ObraApp = (() => {
       const hits = raycaster.intersectObjects(meshes);
       if (hits.length > 0) {
         let hit = hits[0].object;
-        while (hit.parent && hit.parent !== modelGroup) hit = hit.parent;
+        while (hit.parent && !hit.userData.expressID) hit = hit.parent;
         const id = hit.userData.expressID;
         if (id && state.entries.has(id)) {
           const entry = state.entries.get(id);
@@ -308,7 +319,7 @@ const ObraApp = (() => {
       let hitId = null;
       if (hits.length > 0) {
         let hit = hits[0].object;
-        while (hit.parent && hit.parent !== modelGroup) hit = hit.parent;
+        while (hit.parent && !hit.userData.expressID) hit = hit.parent;
         hitId = hit.userData.expressID;
       }
 

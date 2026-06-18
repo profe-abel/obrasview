@@ -203,13 +203,49 @@ pruebalocal/
 
 ## 🔧 Cómo exportar desde Revit
 
-1. Revit → Archivo → Exportar → IFC
-2. Configuración: IFC2x3 Coordination View (recomendado)
-3. Opcional: marcar "Exportar propiedades de Revit como propiedades IFC"
-4. Obtienes un archivo `.ifc` (~5-50 MB según el proyecto)
-5. Arrástralo a ObraView y listo
+### Exportar con niveles (para ver elementos por planta)
 
-> **Tip**: Para proyectos grandes (>100 MB), usa IFC con geometría comprimida (IFC-ZIP).
+1. Revit → Archivo → Exportar → IFC
+2. En la ventana "Exportar IFC", hacer clic en **"Modificar configuraciones"**
+3. Pestaña **"Propiedades"**:
+   - **IFC común**: IFC2x3 Coordination View 2.0
+   - **Fase a exportar**: Fase de construcción principal
+4. Pestaña **"Niveles de detalle"** → **Nivel de detalle alto** (elementos completos)
+5. **⚠️ Clave — Exportar por niveles**:
+   - Pestaña **"Avanzado"**
+   - Marcar **"Exportar partes según planta de construcción"** (o "Split walls, columns, etc. by Levels")
+   - Marcar **"Exportar habitaciones como IfcSpace"**
+   - Marcar **"Exportar grupos de Revit como IfcBuildingElementProxy"**
+6. Pestaña **"Conjunto de propiedades"**:
+   - Marcar **"Exportar conjuntos de propiedades de Revit"**
+   - Marcar **"Exportar cantidades de base (IfcElementQuantity)"**
+7. Exportar → archivo `.ifc`
+8. **Verificar**: Abrir el IFC en un editor de texto y buscar `IfcBuildingStorey` — deben aparecer los niveles del proyecto
+
+> **Si los niveles no se exportan**: Probar con el complemento gratuito [IFC Exporter de Autodesk](https://www.autodesk.com/developer-network/platform-technologies/ifc) que da más control sobre el mapeo de niveles.
+
+---
+
+### Exportar desde SketchUp
+
+1. Instalar extensión **"SketchUp IFC Export"** (gratuita, del Extension Warehouse)
+2. Organizar el modelo por **capas (layers)**: crear una capa por cada planta
+3. Archivo → Exportar → **IFC 2x3**
+4. Los grupos de SketchUp se convierten en `IfcBuildingElementProxy`
+5. **Para que se vean los niveles**: Cada capa se mapea como propiedad de nivel. En ObraView aparecerán agrupados si el IFC contiene `IfcBuildingStorey`
+
+> **Alternativa**: Exportar a **OBJ** desde SketchUp (Archivo → Exportar → OBJ) y cargarlo directamente en ObraView.
+
+---
+
+### Formatos compatibles
+
+| Formato | Soportado | Notas |
+|---|---|---|
+| **IFC (.ifc, .ifczip)** | ✅ Sí | Carga completa con niveles, propiedades y geometría |
+| **OBJ (.obj)** | ✅ Sí | Geometría básica (sin propiedades ni niveles) |
+| **STL (.stl)** | ❌ No | Previsto para futura versión |
+| **DWF (.dwf)** | ❌ No | Formato propietario Autodesk. Sin librerías JS open-source. Alternativa: exportar a IFC desde AutoCAD |
 
 ---
 
