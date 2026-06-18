@@ -3,11 +3,17 @@ const ObraTools = (() => {
   let points = [];
   let measurements = [];
   let measureGroup = null;
+  let snapGroup = null;
+  let measureMoveHandler = null;
+  let lastSnapPoint = null;
 
   function init() {
     measureGroup = new THREE.Group();
     measureGroup.name = 'measure-group';
     ObraViewer.getScene().add(measureGroup);
+    snapGroup = new THREE.Group();
+    snapGroup.name = 'snap-group';
+    ObraViewer.getScene().add(snapGroup);
   }
 
   function toggleMeasure() {
@@ -15,9 +21,13 @@ const ObraTools = (() => {
     active = !active;
     if (!active) {
       points = [];
+      clearSnapPreview();
       ObraViewer.getCanvas().style.cursor = '';
+      if (measureMoveHandler) { ObraViewer.getContainer().removeEventListener('mousemove', measureMoveHandler); measureMoveHandler = null; }
     } else {
       ObraViewer.getCanvas().style.cursor = 'crosshair';
+      measureMoveHandler = (e) => onMeasureMove(e);
+      ObraViewer.getContainer().addEventListener('mousemove', measureMoveHandler);
     }
     return active;
   }
@@ -26,28 +36,85 @@ const ObraTools = (() => {
 
   const SNAP_THRESHOLD = 0.15;
 
-  function snapToVertex(hit) {
-    const mesh = hit.object;
+  function computeSnapPoints(mesh) {
     const posAttr = mesh.geometry.attributes.position;
-    if (!posAttr) return hit.point.clone();
-    const localPt = hit.point.clone();
-    if (mesh.matrixWorld) localPt.applyMatrix4(new THREE.Matrix4().copy(mesh.matrixWorld).invert());
-    let bestDist = Infinity;
-    let bestVertex = null;
+    const idxAttr = mesh.geometry.index;
+    if (!posAttr) return [];
+    const pts = [];
+    const matrix = mesh.matrixWorld;
+    // Vertices
     for (let i = 0; i < posAttr.count; i++) {
-      const vx = posAttr.getX(i), vy = posAttr.getY(i), vz = posAttr.getZ(i);
-      const dx = localPt.x - vx, dy = localPt.y - vy, dz = localPt.z - vz;
-      const d = dx * dx + dy * dy + dz * dz;
-      if (d < bestDist) { bestDist = d; bestVertex = new THREE.Vector3(vx, vy, vz); }
+      const v = new THREE.Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+      if (matrix) v.applyMatrix4(matrix);
+      pts.push({ point: v, type: 'vertex' });
     }
-    if (bestDist < SNAP_THRESHOLD * SNAP_THRESHOLD && bestVertex) {
-      if (mesh.matrixWorld) bestVertex.applyMatrix4(mesh.matrixWorld);
-      return bestVertex;
+    // Edge midpoints (from index buffer)
+    if (idxAttr) {
+      for (let i = 0; i < idxAttr.count; i += 3) {
+        const ia = idxAttr.getX(i), ib = idxAttr.getX(i + 1), ic = idxAttr.getX(i + 2);
+        const a = new THREE.Vector3(posAttr.getX(ia), posAttr.getY(ia), posAttr.getZ(ia));
+        const b = new THREE.Vector3(posAttr.getX(ib), posAttr.getY(ib), posAttr.getZ(ib));
+        const c = new THREE.Vector3(posAttr.getX(ic), posAttr.getY(ic), posAttr.getZ(ic));
+        // Midpoints of triangle edges AB, BC, CA
+        const midAB = a.clone().add(b).multiplyScalar(0.5);
+        const midBC = b.clone().add(c).multiplyScalar(0.5);
+        const midCA = c.clone().add(a).multiplyScalar(0.5);
+        if (matrix) { midAB.applyMatrix4(matrix); midBC.applyMatrix4(matrix); midCA.applyMatrix4(matrix); }
+        pts.push({ point: midAB, type: 'midpoint' });
+        pts.push({ point: midBC, type: 'midpoint' });
+        pts.push({ point: midCA, type: 'midpoint' });
+      }
     }
-    return hit.point.clone();
+    return pts;
   }
 
-  function handleClick(event) {
+  function findBestSnap(hit) {
+    const mesh = hit.object;
+    const snapPts = computeSnapPoints(mesh);
+    const hitPt = hit.point;
+    let best = { point: hitPt.clone(), dist: Infinity, type: 'free' };
+    for (const sp of snapPts) {
+      const d = hitPt.distanceTo(sp.point);
+      if (d < best.dist) best = { point: sp.point, dist: d, type: sp.type };
+    }
+    if (best.dist < SNAP_THRESHOLD) return best;
+    return { point: hitPt.clone(), dist: 0, type: 'free' };
+  }
+
+  function showSnapPreview(pt, type) {
+    clearSnapPreview();
+    const color = type === 'vertex' ? 0xffaa00 : (type === 'midpoint' ? 0x00ffaa : 0x4a9eff);
+    const geo = new THREE.BoxGeometry(0.06, 0.06, 0.06);
+    const mat = new THREE.MeshBasicMaterial({ color });
+    const box = new THREE.Mesh(geo, mat);
+    box.position.copy(pt);
+    box.name = 'snap-marker';
+    snapGroup.add(box);
+    // Crosshair lines
+    const lineMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5 });
+    const s = 0.04;
+    const addLine = (a, b) => {
+      const g = new THREE.BufferGeometry().setFromPoints([a.clone().add(pt), b.clone().add(pt)]);
+      snapGroup.add(new THREE.Line(g, lineMat));
+    };
+    addLine(new THREE.Vector3(-s, 0, 0), new THREE.Vector3(s, 0, 0));
+    addLine(new THREE.Vector3(0, -s, 0), new THREE.Vector3(0, s, 0));
+    addLine(new THREE.Vector3(0, 0, -s), new THREE.Vector3(0, 0, s));
+    lastSnapPoint = pt;
+  }
+
+  function clearSnapPreview() {
+    if (!snapGroup) return;
+    while (snapGroup.children.length > 0) {
+      const c = snapGroup.children[0];
+      if (c.geometry) c.geometry.dispose();
+      if (c.material) c.material.dispose();
+      snapGroup.remove(c);
+    }
+    lastSnapPoint = null;
+  }
+
+  function onMeasureMove(event) {
     if (!active) return;
     const container = ObraViewer.getContainer();
     const rect = container.getBoundingClientRect();
@@ -62,22 +129,50 @@ const ObraTools = (() => {
     modelGroup.children.forEach(child => {
       child.traverse(node => { if (node.isMesh) meshes.push(node); });
     });
-    if (meshes.length === 0) return;
+    if (meshes.length === 0) { clearSnapPreview(); return; }
     const hits = raycaster.intersectObjects(meshes);
-    if (hits.length === 0) return;
-    const pt = snapToVertex(hits[0]);
+    if (hits.length === 0) { clearSnapPreview(); return; }
+    const snap = findBestSnap(hits[0]);
+    showSnapPreview(snap.point, snap.type);
+  }
+
+  function handleClick(event) {
+    if (!active) return;
+    const pt = lastSnapPoint || getMousePoint(event);
+    if (!pt) return;
     points.push(pt);
     if (points.length === 2) {
       addMeasurement(points[0], points[1]);
       points = [];
     } else {
-      drawTempPoint(pt);
+      drawTempPoint(pt, 0x4a9eff);
     }
   }
 
-  function drawTempPoint(pt) {
+  function getMousePoint(event) {
+    const container = ObraViewer.getContainer();
+    const rect = container.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, ObraViewer.getCamera());
+    const modelGroup = ObraViewer.getModelGroup();
+    const meshes = [];
+    modelGroup.children.forEach(child => {
+      child.traverse(node => { if (node.isMesh) meshes.push(node); });
+    });
+    if (meshes.length === 0) return null;
+    const hits = raycaster.intersectObjects(meshes);
+    if (hits.length === 0) return null;
+    const snap = findBestSnap(hits[0]);
+    return snap.point;
+  }
+
+  function drawTempPoint(pt, color) {
     const geo = new THREE.SphereGeometry(0.05, 8, 8);
-    const mat = new THREE.MeshBasicMaterial({ color: 0x4a9eff });
+    const mat = new THREE.MeshBasicMaterial({ color: color || 0x4a9eff });
     const sphere = new THREE.Mesh(geo, mat);
     sphere.position.copy(pt);
     sphere.name = 'temp-point';
@@ -372,6 +467,7 @@ const ObraTools = (() => {
     }
     measurements = [];
     points = [];
+    clearSnapPreview();
   }
 
   function getCount() { return measurements.length; }

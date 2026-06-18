@@ -166,6 +166,48 @@ const ObraViewer = (() => {
           });
           delete node.userData._highlighted;
         }
+        if (node.isMesh && node.userData._hovered) {
+          if (!node.userData._origColor) return;
+          node.material.color.setHex(node.userData._origColor);
+          node.material.emissive.setHex(0x000000);
+          node.material.emissiveIntensity = 0;
+          delete node.userData._hovered;
+          delete node.userData._origColor;
+        }
+      });
+    });
+  }
+
+  let hoverTimer = null;
+
+  function hoverElement(expressID) {
+    clearHover();
+    if (!expressID) return;
+    modelGroup.children.forEach(child => {
+      if (child.userData.expressID === expressID) {
+        child.traverse(node => {
+          if (node.isMesh && !node.userData._highlighted) {
+            node.userData._origColor = node.material.color.getHex();
+            node.material.color.setHex(0x66bbff);
+            node.material.emissive.setHex(0x66bbff);
+            node.material.emissiveIntensity = 0.1;
+            node.userData._hovered = true;
+          }
+        });
+      }
+    });
+  }
+
+  function clearHover() {
+    modelGroup.children.forEach(child => {
+      child.traverse(node => {
+        if (node.isMesh && node.userData._hovered) {
+          node.material.color.setHex(node.userData._origColor || 0x999999);
+          node.material.emissive.setHex(0x000000);
+          node.material.emissiveIntensity = 0;
+          delete node.userData._hovered;
+          delete node.userData._origColor;
+        }
       });
     });
   }
@@ -377,7 +419,7 @@ const ObraViewer = (() => {
     init, dispose,
     addModel, clearModel, fitToModel, setView, zoomToObject,
     removeDemoCube,
-    highlightElement, clearHighlight,
+    highlightElement, clearHighlight, hoverElement, clearHover,
     setModelColor, resetModelColors,
     showTooltip, hideTooltip, getTooltip,
     setElementVisibility, hideAllElements, showAllElements,

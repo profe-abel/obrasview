@@ -267,6 +267,7 @@ const ObraApp = (() => {
   function setupTooltipHover(container) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    let hoverId = null;
     container.addEventListener('mousemove', (e) => {
       if (!state.entries) { ObraViewer.hideTooltip(); return; }
       const rect = container.getBoundingClientRect();
@@ -278,7 +279,7 @@ const ObraApp = (() => {
       modelGroup.children.forEach(child => {
         child.traverse(node => { if (node.isMesh) meshes.push(node); });
       });
-      if (meshes.length === 0) { ObraViewer.hideTooltip(); return; }
+      if (meshes.length === 0) { ObraViewer.hideTooltip(); ObraViewer.clearHover(); hoverId = null; return; }
       const hits = raycaster.intersectObjects(meshes);
       if (hits.length > 0) {
         let hit = hits[0].object;
@@ -287,11 +288,14 @@ const ObraApp = (() => {
         if (id && state.entries.has(id)) {
           const entry = state.entries.get(id);
           ObraViewer.showTooltip(`${entry.typeName} — ${entry.name}`);
+          if (id !== hoverId) { ObraViewer.clearHover(); ObraViewer.hoverElement(id); hoverId = id; }
         } else {
           ObraViewer.hideTooltip();
+          if (hoverId) { ObraViewer.clearHover(); hoverId = null; }
         }
       } else {
         ObraViewer.hideTooltip();
+        if (hoverId) { ObraViewer.clearHover(); hoverId = null; }
       }
     });
   }
