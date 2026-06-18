@@ -1,0 +1,17 @@
+# Aider AI assistant
+.aider*
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Dependencies (not needed in lib/ dir)
+node_modules/
+
+# Assets grandes
+assets/*.ifc
+assets/*.zip

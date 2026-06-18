@@ -1,0 +1,19 @@
+{
+  "name": "obraview",
+  "private": true,
+  "description": "Visor BIM 3D web",
+  "scripts": {
+    "start": "npx http-server -p 3000 -a 127.0.0.1 --cors -o",
+    "dev": "npx http-server -p 3000 -a 127.0.0.1 --cors"
+  },
+  "version": "1.0.0",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "three": "^0.128.0",
+    "web-ifc": "^0.0.77"
+  }
+}
