@@ -91,7 +91,9 @@ const ObraViewer = (() => {
   }
 
   function addModel(threeGroup) {
-    modelGroup.add(threeGroup);
+    while (threeGroup.children.length > 0) {
+      modelGroup.add(threeGroup.children[0]);
+    }
     controls.target.set(0, 0, 0);
   }
 
@@ -118,7 +120,8 @@ const ObraViewer = (() => {
 
   function fitToModel() {
     if (modelGroup.children.length === 0) return;
-    const box = new THREE.Box3().setFromObject(modelGroup);
+    let box;
+    try { box = new THREE.Box3().setFromObject(modelGroup); } catch (e) { return; }
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);

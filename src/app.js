@@ -365,7 +365,9 @@ const ObraApp = (() => {
           if (eid && state.entries.has(eid)) {
             const entry = state.entries.get(eid);
             ObraTools.initMarkers();
-            const box = new THREE.Box3().setFromObject(modelGroup.children.find(c => c.userData.expressID === eid));
+            const target = modelGroup.children.find(c => c.userData.expressID === eid);
+            if (!target) break;
+            const box = new THREE.Box3().setFromObject(target);
             if (box && !box.isEmpty()) {
               const center = box.getCenter(new THREE.Vector3());
               ObraTools.addMarkerAtPosition(center);
