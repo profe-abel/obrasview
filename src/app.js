@@ -157,6 +157,7 @@ const ObraApp = (() => {
       }
 
       ObraTreePanel.build(result.entries);
+      ObraSchedule.init(result.entries);
 
       badge.textContent = result.modelName;
       status.textContent = `${result.itemCount} elementos · ${meshCount} con geometría 3D`;
