@@ -362,6 +362,8 @@ const ObraViewer = (() => {
 
   function getCanvas() { return canvas; }
   function getContainer() { return container; }
+
+  function dispose() {
     window.removeEventListener('resize', onResize);
     renderer.dispose();
     if (container.contains(canvas)) container.removeChild(canvas);
