@@ -26,34 +26,62 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg-navy: #0d0d18;
-      --bg-surface-low: #1b1a26;
-      --bg-surface: #1f1e2a;
-      --bg-surface-high: #292935;
-      --bg-surface-highest: #343440;
-      --text-primary: #e3e0f1;
-      --text-secondary: #c0c7d4;
-      --text-tertiary: #888;
+      /* Prototipo colores exactos */
+      --surface: #12121d;
+      --surface-navy: #1a1a2e;
+      --surface-container: #1f1e2a;
+      --surface-container-high: #292935;
+      --surface-variant: #343440;
+      --surface-bright: #383845;
+      --text-primary: #e0e0e0;
+      --text-secondary: #888888;
+      --text-tertiary: #555555;
       --border-muted: #2a2a45;
-      --accent-blue: #4a9eff;
-      --accent-blue-light: #a4c9ff;
-      --accent-purple: #9b59b6;
-      --accent-purple-light: #ebb2ff;
-      --accent-amber: #f39c12;
-      --accent-gold: #ffb961;
-      --accent-red: #e74c3c;
-      --accent-green: #2ecc71;
-      --accent-orange: #e67e22;
-      --glass-bg: rgba(22, 22, 42, 0.85);
-      --glass-blur: blur(12px);
-      --radius-sm: 2px;
-      --radius: 4px;
-      --radius-md: 6px;
-      --radius-lg: 8px;
-      --radius-xl: 12px;
-      --radius-full: 9999px;
+      --primary: #a4c9ff;
+      --primary-container: #4a9eff;
+      --on-primary-container: #003463;
+      --secondary: #ffb961;
+      --secondary-container: #e89300;
+      --tertiary: #ebb2ff;
+      --tertiary-container: #c681e1;
+      --issue-red: #e74c3c;
+      --collision-orange: #e67e22;
+      
+      /* Border Radius - exact prototipo */
+      --radius-sm: 0.125rem;      /* buttons */
+      --radius: 0.25rem;           /* inputs */
+      --radius-lg: 0.5rem;         /* windows */
+      --radius-xl: 0.75rem;        /* dock */
+      --radius-full: 0.75rem;      /* badges */
+      
+      /* Spacing - exact prototipo */
+      --spacing-unit: 4px;
+      --spacing-gutter: 12px;
+      --spacing-window: 12px;
+      --spacing-desktop: 24px;
+      
+      /* Typography */
       --font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
+      
+      /* Glassmorphism - exact prototipo */
+      --glass-bg: rgba(22, 22, 42, 0.85);
+      --glass-blur: blur(12px);
+
+      /* Derived variables */
+      --bg-navy: var(--surface);
+      --bg-surface-low: #1b1a26;
+      --bg-surface-high: var(--surface-container-high);
+      --bg-surface-highest: var(--surface-variant);
+      --accent-blue: var(--primary-container);
+      --accent-blue-light: var(--primary);
+      --accent-purple: var(--tertiary);
+      --accent-purple-light: var(--tertiary-container);
+      --accent-amber: var(--secondary);
+      --accent-gold: var(--secondary-container);
+      --accent-red: var(--issue-red);
+      --accent-green: #2ecc71;
+      --accent-orange: var(--collision-orange);
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -80,16 +108,87 @@
     #header .model-info #model-status { color: #888; }
     #header .actions { display: flex; align-items: center; gap: 6px; }
 
-    /* Buttons */
+    /* Buttons - exact prototipo */
     .btn {
-      padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer;
-      font-size: 12px; font-weight: 500; transition: all 0.2s; white-space: nowrap;
+      padding: 6px 16px; border: none; border-radius: var(--radius-sm); cursor: pointer;
+      font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+      transition: all 0.2s; white-space: nowrap;
     }
-    .btn-primary { background: #4a9eff; color: #fff; }
-    .btn-primary:hover { background: #3a8eef; }
-    .btn-primary:disabled { background: #2a4a6f; color: #666; cursor: not-allowed; }
-    .btn-secondary { background: var(--bg-surface-high); color: #ccc; }
-    .btn-secondary:hover { background: #3a3a55; }
+    .btn-primary {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background: var(--primary-container);
+      opacity: 0.8;
+      transform: translateY(-1px);
+    }
+    .btn-primary:disabled {
+      background: var(--border-muted);
+      color: var(--text-tertiary);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .btn-secondary {
+      background: var(--surface-variant);
+      color: var(--text-primary);
+      border: 1px solid var(--border-muted);
+    }
+    .btn-secondary:hover {
+      background: var(--surface-container-high);
+      border-color: var(--primary-container);
+      color: var(--primary-container);
+    }
+
+    /* Dropdown menu */
+    .dropdown { position: relative; }
+    .dropdown-btn {
+      display: flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border: none; border-radius: var(--radius);
+      background: transparent; color: var(--text-tertiary);
+      cursor: pointer; font-family: var(--font-mono); font-size: 10px;
+      transition: all 0.15s;
+    }
+    .dropdown-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+    .dropdown-btn .arrow { font-size: 6px; transition: transform 0.2s; }
+    .dropdown.open .dropdown-btn .arrow { transform: rotate(180deg); }
+    .dropdown-menu {
+      position: absolute; top: calc(100% + 4px); left: 0; min-width: 200px;
+      background: rgba(22,22,42,0.95); border: 1px solid var(--border-muted);
+      border-radius: 8px; padding: 4px 0; z-index: 100;
+      backdrop-filter: blur(12px); box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      opacity: 0; transform: translateY(-4px);
+      pointer-events: none; transition: all 0.15s ease;
+    }
+    .dropdown.open .dropdown-menu {
+      opacity: 1; transform: translateY(0); pointer-events: auto;
+    }
+    .dropdown-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px; font-size: 12px; cursor: pointer;
+      color: var(--text-primary); transition: background 0.1s;
+    }
+    .dropdown-item:hover { background: rgba(255,255,255,0.06); }
+    .dropdown-item .material-symbols-outlined { font-size: 14px; color: var(--text-tertiary); }
+    .dropdown-divider { height: 1px; background: var(--border-muted); margin: 4px 0; }
+
+    /* Confirmation modal */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal-card {
+      background: var(--surface-navy); border: 1px solid var(--border-muted);
+      border-radius: 12px; padding: 24px; max-width: 400px; width: 90%;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    }
+    .modal-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); }
+    .modal-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .modal-actions .btn { min-width: 80px; }
 
     /* Viewer */
     #viewer-container { flex: 1; position: relative; overflow: hidden; }
@@ -297,16 +396,49 @@
     /* Panels absorbed into floating windows lose slide transforms */
     .ow-absorbed { position: static !important; width: 100% !important; height: 100% !important; transform: none !important; border: none !important; backdrop-filter: none !important; background: transparent !important; border-radius: 0 !important; }
 
-    /* Floating window manager */
-    .obra-window { transition: box-shadow 0.2s; }
+    /* Floating window manager - exact prototipo */
+    .obra-window {
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--border-muted);
+      border-radius: 8px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .obra-window:hover {
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+      transform: translateY(-2px);
+    }
+    .obra-window.active-glow-purple {
+      border-color: #ebb2ff;
+      box-shadow: 0 0 12px rgba(235, 178, 255, 0.2);
+    }
+    .obra-window.active-glow-blue {
+      border-color: #4a9eff;
+      box-shadow: 0 0 12px rgba(74, 158, 255, 0.2);
+    }
+    .obra-window.active-glow-gold {
+      border-color: #ffb961;
+      box-shadow: 0 0 12px rgba(255, 185, 97, 0.2);
+    }
     .obra-window:hover [class^="ow-resize"] { opacity: 0.3; }
     [class^="ow-resize"] { opacity: 0; transition: opacity 0.15s; }
     .ow-body { scrollbar-width: thin; scrollbar-color: #2a2a45 transparent; }
     .ow-body::-webkit-scrollbar { width: 4px; }
     .ow-body::-webkit-scrollbar-track { background: transparent; }
     .ow-body::-webkit-scrollbar-thumb { background: #2a2a45; border-radius: 10px; }
-    .ow-icon { font-size: 14px !important; line-height: 1 !important; }
-    .ow-icon:hover { background: rgba(255,255,255,0.08); color: #fff !important; }
+    .ow-icon {
+      font-size: 14px !important;
+      line-height: 1 !important;
+      background: transparent;
+      color: var(--text-tertiary);
+      padding: 4px;
+      border-radius: var(--radius);
+    }
+    .ow-icon:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-primary) !important;
+    }
 
     /* Bottom dock */
     #obra-dock {
@@ -656,33 +788,73 @@
   <div id="app">
     <header id="header">
       <div class="brand">
-        <h1>ObraView</h1>
-        <span class="badge" id="version-badge">—</span>
+        <h1 style="font-family: 'Hanken Grotesk', sans-serif; font-size: 16px; font-weight: 600; color: var(--primary-container); letter-spacing: 0.5px;">ObraView</h1>
+        <span class="badge" id="version-badge" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-tertiary); background: #22223a; padding: 2px 7px; border-radius: 4px;">—</span>
       </div>
       <div class="model-info">
-        <span id="model-badge"></span>
-        <span id="model-status">Arrastra un archivo IFC o cárgalo</span>
+        <span id="model-badge" style="color: var(--primary-container); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;"></span>
+        <span id="model-status" style="color: var(--text-tertiary)">Arrastra un archivo IFC o cárgalo</span>
       </div>
       <div class="actions" style="margin-right:auto;margin-left:12px">
-        <button class="btn btn-secondary" title="Nuevo proyecto" onclick="if(confirm('¿Limpiar todo? Se perderán los cambios no guardados.')){ObraTools.clearAll();ObraStorage._clear?.();localStorage.removeItem('obraview_schedule_rubros');location.reload()}">📄</button>
-        <button class="btn btn-secondary" title="Guardar proyecto (.obraview)" onclick="ObraProject.saveAs()">💾</button>
-        <button class="btn btn-secondary" title="Cargar proyecto (.obraview)" onclick="document.getElementById('file-load-project').click()">📂</button>
-        <input type="file" id="file-load-project" accept=".obraview" style="display:none" onchange="ObraProject.load(this.files[0]).then(()=>{alert('Proyecto cargado correctamente');location.reload()}).catch(err=>alert('Error: '+err.message))">
+        <div class="dropdown" id="file-dropdown">
+          <button class="dropdown-btn" onclick="this.parentElement.classList.toggle('open')">
+            Archivo <span class="arrow">▼</span>
+          </button>
+          <div class="dropdown-menu">
+            <div class="dropdown-item" data-action="new-project">
+              <span class="material-symbols-outlined">description</span> Nuevo proyecto
+            </div>
+            <div class="dropdown-item" data-action="save-project">
+              <span class="material-symbols-outlined">save</span> Guardar proyecto
+            </div>
+            <div class="dropdown-item" data-action="load-project">
+              <span class="material-symbols-outlined">folder_open</span> Cargar proyecto
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" data-action="settings">
+              <span class="material-symbols-outlined">settings</span> Configuración
+            </div>
+          </div>
+        </div>
+        <input type="file" id="file-load-project" accept=".obraview" style="display:none">
       </div>
       <div class="actions">
-        <button id="tree-btn" title="Explorar elementos" onclick="ObraTreePanel.togglePanel()">📋</button>
-        <button id="measure-btn" class="btn btn-secondary" title="Medir distancia" onclick="ObraApp.toggleMeasure()">📏</button>
-        <button class="btn btn-secondary" title="Limpiar mediciones" onclick="ObraTools.clearAll()" style="font-size:11px">✕</button>
-        <button id="collision-btn" class="btn btn-secondary" title="Detectar colisiones" onclick="ObraApp.toggleCollision()">⚡</button>
-        <button id="pin-btn" class="btn btn-secondary" title="Agregar marcador" onclick="ObraApp.togglePinMode()">📌</button>
-        <button class="btn btn-secondary" title="Programación" onclick="GanttView.togglePanel()">📊</button>
-        <button class="btn btn-secondary" title="Reporte PDF" onclick="ObraReportView.generateReport()">📄</button>
-        <button class="btn btn-secondary" title="Lista de incidencias" onclick="ObraApp.toggleIssueList()">📋</button>
-        <button class="btn btn-secondary" title="Exportar incidencias" onclick="ObraStorage.exportJSON()">⬇</button>
+        <button id="tree-btn" title="Explorar elementos" onclick="ObraTreePanel.togglePanel()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          📋
+        </button>
+        <button id="measure-btn" title="Medir distancia" onclick="ObraApp.toggleMeasure()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          📏
+        </button>
+        <button title="Limpiar mediciones" onclick="ObraTools.clearAll()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 11px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          ✕
+        </button>
+        <button id="collision-btn" title="Detectar colisiones" onclick="ObraApp.toggleCollision()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          ⚡
+        </button>
+        <button id="pin-btn" title="Agregar marcador" onclick="ObraApp.togglePinMode()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          📌
+        </button>
+        <button title="Programación" onclick="GanttView.togglePanel()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          📊
+        </button>
+        <button title="Reporte PDF" onclick="ObraReportView.generateReport()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          📄
+        </button>
+        <button title="Lista de incidencias" onclick="ObraApp.toggleIssueList()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          📋
+        </button>
+        <button title="Exportar incidencias" onclick="ObraStorage.exportJSON()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          ⬇
+        </button>
         <input type="file" id="file-import-issues" accept=".json" style="display:none" onchange="ObraApp.importIssues(event)">
-        <button class="btn btn-secondary" title="Importar incidencias" onclick="document.getElementById('file-import-issues').click()">⬆</button>
+        <button title="Importar incidencias" onclick="document.getElementById('file-import-issues').click()" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: var(--radius); line-height: 1">
+          ⬆
+        </button>
         <input type="file" id="file-input" accept=".ifc,.ifczip,.obj,.mtl,.png,.jpg,.jpeg,.bmp,.gif" multiple style="display:none">
-        <button class="btn btn-primary" id="btn-load">Cargar IFC</button>
+        <button class="btn btn-primary" id="btn-load" style="background: var(--primary-container); color: var(--on-primary-container); font-weight: 600; font-family: var(--font-mono); font-size: 12px; padding: 6px 16px; border-radius: var(--radius-sm);">
+          <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 6px;">upload_file</span>
+          Cargar IFC
+        </button>
       </div>
     </header>
 
@@ -762,6 +934,16 @@
           <input type="range" id="clip-slider" min="-50" max="50" value="0" step="0.1" title="Posición del corte">
           <span class="clip-label" id="clip-val">0</span>
           <button class="clip-btn" id="clip-reset" title="Reset corte">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="confirm-modal">
+      <div class="modal-card">
+        <h3 id="confirm-title">Confirmar acción</h3>
+        <p id="confirm-message">¿Estás seguro?</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="confirm-cancel">Cancelar</button>
+          <button class="btn btn-primary" id="confirm-ok">Confirmar</button>
         </div>
       </div>
     </div>

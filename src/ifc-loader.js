@@ -61,8 +61,6 @@ const ObraIfcLoader = (() => {
     const entries = buildEntries(modelID, allItems, storeys, onProgress);
     const modelName = file.name.replace(/\.(ifc|ifczip)$/i, '');
 
-    console.log(`ObraView: ${entries.size} elementos encontrados, ${allTypes.length} tipos en el modelo`);
-
     return { modelID, modelName, entries, storeys, itemCount: entries.size };
   }
 
@@ -182,7 +180,6 @@ const ObraIfcLoader = (() => {
     }
 
     const totalMeshes = allMeshes.size ? allMeshes.size() : allMeshes.length;
-    console.log(`ObraView: LoadAllGeometry encontró ${totalMeshes} flat meshes`);
     let done = 0;
     const logEvery = Math.max(1, Math.floor(totalMeshes / 20));
 
@@ -289,7 +286,6 @@ const ObraIfcLoader = (() => {
       }
     }
 
-    console.log(`ObraView: ${group.children.length} mallas generadas de ${entries.size} elementos`);
     setMeshData(meshEntries);
     return group;
   }
@@ -376,7 +372,6 @@ const ObraIfcLoader = (() => {
       } catch (e) {}
     }
 
-    console.log(`ObraView (fallback): ${group.children.length} mallas de ${entries.size} elementos`);
     setMeshData(meshEntries);
     return group;
   }

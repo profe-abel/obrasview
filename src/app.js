@@ -29,6 +29,83 @@ const ObraApp = (() => {
     setupClipping();
     setupBoxSelect(container);
     setupFloatingWindows(container);
+    setupDropdownMenus();
+  }
+
+  function setupDropdownMenus() {
+    const dropdown = document.getElementById('file-dropdown');
+    if (!dropdown) return;
+    const btn = dropdown.querySelector('.dropdown-btn');
+    const menu = dropdown.querySelector('.dropdown-menu');
+    const items = menu.querySelectorAll('.dropdown-item');
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle('open');
+    });
+
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
+
+    items.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('open');
+        const action = item.dataset.action;
+        switch (action) {
+          case 'new-project':
+            showConfirmModal(
+              'Nuevo proyecto',
+              '¿Limpiar todo? Se perderán los cambios no guardados.',
+              () => {
+                ObraTools.clearAll();
+                ObraStorage._clear?.();
+                localStorage.removeItem('obraview_schedule_rubros');
+                location.reload();
+              }
+            );
+            break;
+          case 'save-project':
+            ObraProject.saveAs();
+            break;
+          case 'load-project':
+            document.getElementById('file-load-project').click();
+            break;
+          case 'settings':
+            ObraWindowManager.toggle('settings');
+            break;
+        }
+      });
+    });
+
+    document.getElementById('file-load-project').addEventListener('change', function() {
+      if (this.files[0]) {
+        ObraProject.load(this.files[0])
+          .then(() => { alert('Proyecto cargado correctamente'); location.reload(); })
+          .catch(err => alert('Error: ' + err.message));
+      }
+    });
+  }
+
+  function showConfirmModal(title, message, onConfirm) {
+    const overlay = document.getElementById('confirm-modal');
+    const titleEl = document.getElementById('confirm-title');
+    const msgEl = document.getElementById('confirm-message');
+    const okBtn = document.getElementById('confirm-ok');
+    const cancelBtn = document.getElementById('confirm-cancel');
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    overlay.classList.add('visible');
+
+    const controller = new AbortController();
+    const cleanup = () => {
+      overlay.classList.remove('visible');
+      controller.abort();
+    };
+
+    okBtn.addEventListener('click', () => { cleanup(); onConfirm(); }, { signal: controller.signal });
+    cancelBtn.addEventListener('click', cleanup, { signal: controller.signal });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(); }, { signal: controller.signal });
   }
 
   function setupFileInput() {

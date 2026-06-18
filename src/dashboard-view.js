@@ -1,6 +1,45 @@
 const ObraDashboard = (() => {
   let scheduledRender = null;
 
+  function animateValue(el, start, end, duration, formatter) {
+    const startTime = performance.now();
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+    function tick(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeOutCubic(progress);
+      const current = start + (end - start) * eased;
+      el.textContent = formatter(current);
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function animateKPIs() {
+    const kpiEls = document.querySelectorAll('[data-kpi]');
+    kpiEls.forEach(el => {
+      const target = parseFloat(el.dataset.kpi);
+      if (isNaN(target) || target === 0) return;
+      const type = el.dataset.kpiType;
+      let formatter;
+      if (type === 'currency') {
+        const isM = target >= 1e6;
+        const isK = target >= 1e3;
+        formatter = (v) => {
+          if (isM) return '$' + (v / 1e6).toFixed(1) + 'M';
+          if (isK) return '$' + (v / 1e3).toFixed(1) + 'K';
+          return '$' + v.toFixed(1);
+        };
+      } else if (type === 'percent') {
+        formatter = (v) => v.toFixed(1) + '%';
+      } else {
+        formatter = (v) => Math.round(v).toString();
+      }
+      el.textContent = formatter(0);
+      animateValue(el, 0, target, 1200, formatter);
+    });
+  }
+
   function render() {
     const win = ObraWindowManager.get('dashboard');
     if (!win) return;
@@ -84,7 +123,7 @@ const ObraDashboard = (() => {
           <div class="dash-card">
             <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">📊 Presupuesto Total</div>
             <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
-              <div style="font-size:22px;font-weight:700;color:#e3e0f1">${totalBudget > 0 ? fmtShort(totalBudget) : '$ —'}</div>
+              <div style="font-size:22px;font-weight:700;color:#e3e0f1" data-kpi="${totalBudget}" data-kpi-type="currency">${totalBudget > 0 ? fmtShort(totalBudget) : '$ —'}</div>
               <div style="width:28px;height:28px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center">
                 <span style="color:#10b981;font-size:14px">💰</span>
               </div>
@@ -96,7 +135,7 @@ const ObraDashboard = (() => {
             <div class="dash-card">
               <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">⏱️ Avance General</div>
               <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
-                <div style="font-size:22px;font-weight:700;color:#e3e0f1">${kpiAvancePct}%</div>
+                <div style="font-size:22px;font-weight:700;color:#e3e0f1" data-kpi="${kpiAvancePct}" data-kpi-type="percent">${kpiAvancePct}%</div>
                 <div style="width:28px;height:28px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center">
                   <span style="color:#10b981;font-size:14px">📈</span>
                 </div>
@@ -110,7 +149,7 @@ const ObraDashboard = (() => {
             <div class="dash-card">
               <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">📋 Rubros Programados</div>
               <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
-                <div style="font-size:22px;font-weight:700;color:#e3e0f1">${rubroCount}</div>
+                <div style="font-size:22px;font-weight:700;color:#e3e0f1" data-kpi="${rubroCount}" data-kpi-type="integer">${rubroCount}</div>
                 <div style="width:28px;height:28px;background:rgba(74,158,255,0.15);border:1px solid rgba(74,158,255,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center">
                   <span style="color:#4a9eff;font-size:14px">📊</span>
                 </div>
@@ -122,7 +161,7 @@ const ObraDashboard = (() => {
             <div class="dash-card" style="border-color:${criticalIssues > 0 ? 'rgba(231,76,60,0.4)' : '#2a2a45'}">
               <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">⚠️ Incidencias Pendientes</div>
               <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
-                <div style="font-size:22px;font-weight:700;color:${criticalIssues > 0 ? '#e74c3c' : '#e3e0f1'}">${criticalIssues}</div>
+                <div style="font-size:22px;font-weight:700;color:${criticalIssues > 0 ? '#e74c3c' : '#e3e0f1'}" data-kpi="${criticalIssues}" data-kpi-type="integer">${criticalIssues}</div>
                 <div style="width:28px;height:28px;background:${criticalIssues > 0 ? 'rgba(231,76,60,0.15)' : 'rgba(42,42,69,0.3)'};border:1px solid ${criticalIssues > 0 ? 'rgba(231,76,60,0.4)' : '#2a2a45'};border-radius:8px;display:flex;align-items:center;justify-content:center">
                   <span style="color:${criticalIssues > 0 ? '#e74c3c' : '#666'};font-size:14px">🚨</span>
                 </div>
@@ -192,6 +231,8 @@ const ObraDashboard = (() => {
           </div>
         </div>
       </div>`;
+
+    setTimeout(animateKPIs, 50);
   }
 
   function generateSCurve() {
@@ -244,5 +285,5 @@ const ObraDashboard = (() => {
     return `<svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg)">${slices}</svg>`;
   }
 
-  return { render };
+  return { render, animateKPIs };
 })();

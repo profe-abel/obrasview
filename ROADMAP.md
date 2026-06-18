@@ -3,184 +3,168 @@
 Visor 3D para modelos BIM (IFC) que funciona en el navegador, sin instalación, ideal para usar en obra desde el celular, tablet o laptop.
 
 > **Stack**: Three.js + web-ifc + HTML estático  
-> **Formato**: IFC (exportable desde Revit, ArchiCAD, FreeCAD, etc.)  
-> **Despliegue**: Abrir `index.html` desde cualquier carpeta local, Drive, o GitHub Pages
+> **Formato**: IFC (exportable desde Revit, ArchiCAD, FreeCAD, etc.), OBJ + MTL + texturas  
+> **Despliegue**: GitHub Pages, cualquier servidor estático, o archivo local
 
 ---
 
 ## 📁 Estructura del proyecto
 
 ```
-pruebalocal/
+obrasview/
 ├── ROADMAP.md                 ← Este archivo (plan maestro)
 ├── index.html                 ← Punto de entrada de la app
 ├── .gitignore
 ├── src/
-│   ├── app.js                 ← Controlador principal / estado global
+│   ├── app.js                 ← Controlador principal / dropdown menus / modales
 │   ├── viewer.js              ← Motor 3D (Three.js scene, cámara, luces, orbit)
-│   ├── ifc-loader.js          ← Carga y parseo de archivos IFC
+│   ├── ifc-loader.js          ← Carga y parseo de archivos IFC/OBJ
 │   ├── properties-panel.js    ← Panel de propiedades del elemento seleccionado
 │   ├── tree-panel.js          ← Árbol de proyecto por pisos/tipos
 │   ├── tools.js               ← Herramientas: medir, seccionar, anotar
-│   └── storage.js             ← Guardar/cargar incidencias en JSON
-├── assets/
-│   └── (modelos .ifc de prueba)
-└── lib/
-    └── (librerías si se descargan localmente)
+│   ├── storage.js             ← Guardar/cargar incidencias en JSON
+│   ├── window-manager.js      ← Ventanas flotantes con drag/resize/focus
+│   ├── dock.js                ← Dock inferior con glassmorphism
+│   ├── schedule-manager.js    ← Gestión de programación/4D
+│   ├── gantt-view.js          ← Vista Gantt + rubros interactivos
+│   ├── budget-manager.js      ← Gestión de presupuesto 5D
+│   ├── budget-view.js         ← Vista de presupuesto con tabla moderna
+│   ├── dashboard-view.js      ← Dashboard con KPIs animados, curva S, donut
+│   ├── collision-view.js      ← Detección de colisiones con severidad
+│   ├── simulation.js          ← Simulación 4D play/pause/speed
+│   ├── settings-view.js       ← Panel de configuración
+│   ├── report-view.js         ← Generación de reportes PDF
+│   ├── project-manager.js     ← Save/load proyectos .obraview
+│   ├── i18n.js                ← Internacionalización ES/EN
+│   └── (más módulos)
+├── estilo/                    ← Prototipos de diseño
+├── lib/
+│   └── web-ifc-api-iife.js   ← web-ifc v0.0.77 local
+└── assets/
+    └── (modelos .ifc de prueba)
 ```
 
 ---
 
 ## 🗺️ Hoja de ruta por fases
 
-### 🟢 Fase 1 — Hola mundo 3D _(~1 tarde)_
-**Objetivo**: Renderizar un objeto 3D navegable en el navegador.
-
+### ✅ Fase 1 — Hola mundo 3D
 - [x] Crear `index.html` con Three.js desde CDN
-- [ ] Renderizar un cubo/grid con iluminación
-- [ ] OrbitControls (rotar, hacer zoom, panear)
-- [ ] Auto resize de la ventana
-- [ ] Pantalla en negro con stats básicos
+- [x] Renderizar un cubo/grid con iluminación
+- [x] OrbitControls (rotar, hacer zoom, panear)
+- [x] Auto resize de la ventana
+- [x] Pantalla en negro con stats básicos
 
-**Archivos**: `index.html`, `src/viewer.js`, `src/app.js`  
-**Resultado**: Una escena 3D interactiva en el navegador.
+### ✅ Fase 2 — Cargar modelo IFC
+- [x] Integrar `web-ifc` (WebAssembly)
+- [x] Botón "Cargar archivo IFC" (input type=file)
+- [x] Parsear el IFC y convertir geometría a mallas Three.js
+- [x] Mostrar el modelo completo con materiales por defecto
+- [x] Encuadrar (fitToScene) al cargar
+- [x] Soporte OBJ + MTL + texturas
 
----
+### ✅ Fase 3 — Navegación profesional
+- [x] Botones de vista: Planta, Frontal, Lateral, Perspectiva
+- [x] Zoom a selección (encuadrar en objeto)
+- [x] Tooltip con nombre del elemento bajo el cursor
+- [x] Barra de herramientas flotante (CSS)
+- [x] Atajos de teclado (R para reset, F para encuadrar, 1-2-3 vistas, WASD caminar)
 
-### 🟢 Fase 2 — Cargar un modelo IFC real _(~1-2 tardes)_
-**Objetivo**: Ver tu modelo de Revit en el navegador.
+### ✅ Fase 4 — Seleccionar elementos y ver propiedades
+- [x] Raycaster para detectar clic en objetos 3D
+- [x] Resaltar elemento seleccionado (outline o cambio de color)
+- [x] Panel lateral con propiedades: Tipo, Material, Dimensiones, Nivel, GUID/ExpressID
+- [x] Deseleccionar con clic en vacío
+- [x] Selección múltiple (Ctrl+click)
+- [x] Selección por rectángulo (box select)
 
-- [ ] Integrar `web-ifc` (WebAssembly)
-- [ ] Botón "Cargar archivo IFC" (input type=file)
-- [ ] Parsear el IFC y convertir geometría a mallas Three.js
-- [ ] Mostrar el modelo completo con materiales por defecto
-- [ ] Encuadrar (fitToScene) al cargar
+### ✅ Fase 5 — Árbol de proyecto + filtros
+- [x] Árbol colapsable por pisos (IfcBuildingStorey)
+- [x] Subárbol por categorías dentro de cada piso
+- [x] Checkbox para ocultar/mostrar elementos
+- [x] Ocultar todo / mostrar todo
+- [x] Filtro rápido por texto (búsqueda por nombre)
+- [x] Aislar elemento (ocultar todo excepto selección)
 
-**Archivos**: `src/ifc-loader.js`, `index.html`  
-**Resultado**: Cargas un `.ifc` y ves tu modelo en 3D.
+### ✅ Fase 6 — Herramientas de medición
+- [x] Modo "Medir distancia": clic A → clic B → línea + etiqueta
+- [x] Mostrar medida en metros (con 2 decimales)
+- [x] Acumulador (varias medidas simultáneas)
+- [x] Botón "Limpiar todo"
 
----
+### ✅ Fase 7 — Planos de corte / secciones
+- [x] Plano de corte con Three.js clipping planes
+- [x] Ejes X, Y, Z seleccionables
+- [x] Slider para desplazar el plano de corte
+- [x] Botón "Reset corte"
 
-### 🟡 Fase 3 — Navegación profesional _(~1 tarde)_
-**Objetivo**: Controles de navegación como en Navisworks.
+### ✅ Fase 8 — Detección de colisiones
+- [x] Seleccionar dos categorías (ej. "Muros vs Tuberías")
+- [x] Algoritmo de detección por bounding boxes
+- [x] Resaltar intersecciones en rojo
+- [x] Lista de colisiones con severidad (critical/high/medium/low)
+- [x] Exportar reporte JSON + BCF
+- [x] Tolerancia y cálculo de volumen
 
-- [ ] Botones de vista: Planta, Frontal, Lateral, Perspectiva
-- [ ] Zoom a selección (encuadrar en objeto)
-- [ ] Tooltip con nombre del elemento bajo el cursor
-- [ ] Barra de herramientas flotante (CSS)
-- [ ] Atajos de teclado (R para reset, F para encuadrar)
+### ✅ Fase 9 — Anotaciones + seguimiento de obra
+- [x] Marcador 3D (pin) en ubicación seleccionada
+- [x] Panel de incidencia: título, descripción, estado, fotos, coordenadas
+- [x] Lista de incidencias con filtros por estado
+- [x] Exportar/Importar incidencias (JSON)
+- [x] Marcadores con color según estado
 
-**Archivos**: `src/viewer.js`, `src/ui.js` (nuevo)  
-**Resultado**: Navegación fluida y profesional.
+### ✅ Fase 10 — PWA + offline
+- [x] Service Worker para funcionar offline
+- [x] manifest.json (instalable)
+- [x] Optimización para pantallas táctiles
 
----
+### ✅ Fase 11 — Gestión de proyecto
+- [x] Guardar proyecto completo (`.obraview`)
+- [x] Cargar proyecto guardado
+- [x] Dropdown menú "Archivo" con opciones
 
-### 🟡 Fase 4 — Seleccionar elementos y ver propiedades _(~2 tardes)_
-**Objetivo**: Inspeccionar elementos como en Navisworks.
+### ✅ Fase 12 — Reportes
+- [x] Generación de reportes PDF con screenshot
+- [x] Incluir datos del modelo y estadísticas
 
-- [ ] Raycaster para detectar clic en objetos 3D
-- [ ] Resaltar elemento seleccionado (outline o cambio de color)
-- [ ] Panel lateral con propiedades:
-  - Tipo (IfcWall, IfcSlab, IfcWindow, IfcColumn…)
-  - Material
-  - Dimensiones (largo, alto, espesor)
-  - Nivel (IfcBuildingStorey)
-  - GUID / ExpressID
-- [ ] Deseleccionar con clic en vacío
+### ✅ Fase 13 — Simulación 4D
+- [x] Play/pause/speed/seek/reset
+- [x] Coloreado de elementos por estado de programación
+- [x] Timeline visual
 
-**Archivos**: `src/properties-panel.js` (nuevo), `src/ifc-loader.js`  
-**Resultado**: Clic → ves todos los datos del elemento.
+### ✅ Fase 14 — Presupuesto 5D
+- [x] CRUD de presupuesto por categorías
+- [x] Importación CSV/XLSX
+- [x] Tabla moderna con badges de estado
+- [x] Cálculo automático de totales
 
----
+### ✅ Fase 15 — Dashboard de control
+- [x] KPI cards con contadores animados (easeOutCubic)
+- [x] Curva S de progreso (plan vs real)
+- [x] Gráfico donut de distribución de costos
+- [x] Estado de incidencias por severidad
 
-### 🟠 Fase 5 — Árbol de proyecto + filtros _(~2 tardes)_
-**Objetivo**: Organizar y filtrar el modelo.
+### ✅ Fase 16 — i18n
+- [x] Soporte ES/EN con ~250 claves
+- [x] Selector de idioma en configuración
+- [x] Interpolación de strings
 
-- [ ] Árbol colapsable por pisos (IfcBuildingStorey)
-- [ ] Subárbol por categorías dentro de cada piso
-- [ ] Checkbox para ocultar/mostrar elementos
-- [ ] Ocultar todo / mostrar todo
-- [ ] Filtro rápido por texto (búsqueda por nombre)
-- [ ] Aislar elemento (ocultar todo excepto selección)
+### ✅ Fase 17 — Dock + Window Manager
+- [x] Bottom dock con glassmorphism
+- [x] Ventanas flotantes con drag/resize/focus
+- [x] Estados de glow (purple/blue/gold)
+- [x] Z-index management automático
+- [x] Pulse animation en dock activo
 
-**Archivos**: `src/tree-panel.js` (nuevo)  
-**Resultado**: Navegas el modelo por plantas y categorías.
-
----
-
-### 🔵 Fase 6 — Herramientas de medición _(~2 tardes)_
-**Objetivo**: Medir distancias y áreas en obra.
-
-- [ ] Modo "Medir distancia": clic A → clic B → línea + etiqueta
-- [ ] Mostrar medida en metros (con 2 decimales)
-- [ ] Modo "Medir área": seleccionar cara → calcular área
-- [ ] Acumulador (varias medidas simultáneas)
-- [ ] Botón "Limpiar todo"
-- [ ] Snap a vértices y puntos medios
-
-**Archivos**: `src/tools.js`  
-**Resultado**: Tomas medidas precisas en tu modelo.
-
----
-
-### 🔵 Fase 7 — Planos de corte / secciones _(~2 tardes)_
-**Objetivo**: Ver el interior del modelo.
-
-- [ ] Plano de corte con Three.js clipping planes
-- [ ] Ejes X, Y, Z seleccionables
-- [ ] Slider para desplazar el plano de corte
-- [ ] Botón "Reset corte"
-- [ ] Indicador visual de la posición del corte
-
-**Archivos**: `src/tools.js`  
-**Resultado**: Cortas el modelo dinámicamente.
-
----
-
-### 🔵 Fase 8 — Detección básica de colisiones _(~3 tardes)_
-**Objetivo**: Encontrar interferencias entre elementos.
-
-- [ ] Seleccionar dos categorías (ej. "Muros vs Tuberías")
-- [ ] Algoritmo de detección por bounding boxes
-- [ ] Resaltar intersecciones en rojo
-- [ ] Lista de colisiones con coordenadas
-- [ ] Exportar reporte JSON
-
-**Archivos**: `src/tools.js`  
-**Resultado**: Detección de clash básica.
-
----
-
-### 🟣 Fase 9 — Anotaciones + seguimiento de obra _(~3 tardes)_
-**Objetivo**: Hacer seguimiento en obra.
-
-- [ ] Marcador 3D (pin) en ubicación seleccionada
-- [ ] Panel de incidencia asociado al marcador:
-  - Título, descripción, estado (pendiente/en proceso/resuelto)
-  - Fotos (subida desde celular/cámara)
-  - Coordenadas x,y,z
-  - Fecha de creación
-- [ ] Lista de incidencias con filtros por estado
-- [ ] Exportar/Importar incidencias (JSON descargable)
-- [ ] Marcadores con color según estado
-
-**Archivos**: `src/tools.js`, `src/storage.js`  
-**Resultado**: Tomas nota de incidencias directamente sobre el modelo.
-
----
-
-### 🟣 Fase 10 — PWA + Drive + offline _(~2 tardes)_
-**Objetivo**: Usar la app en obra sin internet.
-
-- [ ] Service Worker para funcionar offline
-- [ ] Cargar modelos desde Drive/OneDrive (archivo local)
-- [ ] Compartir link por WhatsApp/QR
-- [ ] Pantalla de inicio tipo app (splash screen)
-- [ ] Instalable en celular (manifest.json + service worker)
-- [ ] Optimización para pantallas táctiles (gestos)
-
-**Archivos**: `sw.js`, `manifest.json`, `index.html`  
-**Resultado**: Abres la app en obra, cargas el IFC y trabajas offline.
+### ✅ Fase 18 — Visual Design System
+- [x] Paleta de colores exacta del prototipo (DESIGN.md)
+- [x] Sistema de botones primary/secondary
+- [x] Glassmorphism en ventanas, dock, modales
+- [x] Scrollbars temáticos (WebKit + Firefox)
+- [x] Menú desplegable "Archivo" con modal de confirmación
+- [x] Animaciones de transición en todo (cubic-bezier)
+- [x] CSS variables consolidadas dentro de `:root`
+- [x] Modal de confirmación con AbortController (sin memory leaks)
 
 ---
 
@@ -188,79 +172,29 @@ pruebalocal/
 
 | Aspecto | Incluye | No incluye |
 |---|---|---|
-| Formatos | IFC2x3, IFC4 | DWG, RVT (propietarios) |
-| Navegación | Órbita, zoom, paneo, vistas predefinidas | Recorrido animado automático |
-| Selección | Por clic, por árbol, por búsqueda | Selección por ventana/rectángulo |
+| Formatos | IFC2x3, IFC4, OBJ + MTL + texturas | DWG, RVT (propietarios) |
+| Navegación | Órbita, zoom, paneo, vistas predefinidas, modo caminar WASD | Recorrido animado automático |
+| Selección | Por clic, por árbol, por búsqueda, por rectángulo, múltiple | Selección por volumen |
 | Propiedades | Todas las del IFC (tipo, material, nivel, etc.) | Edición de propiedades |
-| Medición | Distancia, área | Volumen, ángulo |
+| Medición | Distancia | Área, volumen, ángulo |
 | Corte | Plano dinámico X,Y,Z | Corte por sección libre |
-| Colisiones | Bounding boxes entre categorías | Detección precisa por geometría |
-| Seguimiento | Marcadores + incidencias + fotos | Sincronización en tiempo real multi-usuario |
-| Despliegue | Archivos estáticos (local, Drive, GitHub Pages) | Backend, base de datos, login |
+| Colisiones | Bounding boxes entre categorías con severidad | Detección precisa por geometría |
+| Seguimiento | Marcadores + incidencias + fotos + export JSON | Sincronización en tiempo real multi-usuario |
+| 4D | Simulación con timeline + coloreado por estado | Integración con MS Project |
+| 5D | Presupuesto por categorías + importación CSV/XLSX | Integración con SAP |
+| Despliegue | GitHub Pages, archivos estáticos (local, Drive) | Backend, base de datos, login |
 | Offline | Service worker + carga local | Sync offline-to-cloud |
 
 ---
 
-## 🔧 Cómo exportar desde Revit
+## 🚀 Deploy
 
-### Exportar con niveles (para ver elementos por planta)
+```bash
+# pushes a master para GitHub Pages
+git add -A && git commit -m "feat: ..." && git push origin master
+```
 
-1. Revit → Archivo → Exportar → IFC
-2. En la ventana "Exportar IFC", hacer clic en **"Modificar configuraciones"**
-3. Pestaña **"Propiedades"**:
-   - **IFC común**: IFC2x3 Coordination View 2.0
-   - **Fase a exportar**: Fase de construcción principal
-4. Pestaña **"Niveles de detalle"** → **Nivel de detalle alto** (elementos completos)
-5. **⚠️ Clave — Exportar por niveles**:
-   - Pestaña **"Avanzado"**
-   - Marcar **"Exportar partes según planta de construcción"** (o "Split walls, columns, etc. by Levels")
-   - Marcar **"Exportar habitaciones como IfcSpace"**
-   - Marcar **"Exportar grupos de Revit como IfcBuildingElementProxy"**
-6. Pestaña **"Conjunto de propiedades"**:
-   - Marcar **"Exportar conjuntos de propiedades de Revit"**
-   - Marcar **"Exportar cantidades de base (IfcElementQuantity)"**
-7. Exportar → archivo `.ifc`
-8. **Verificar**: Abrir el IFC en un editor de texto y buscar `IfcBuildingStorey` — deben aparecer los niveles del proyecto
-
-> **Si los niveles no se exportan**: Probar con el complemento gratuito [IFC Exporter de Autodesk](https://www.autodesk.com/developer-network/platform-technologies/ifc) que da más control sobre el mapeo de niveles.
-
----
-
-### Exportar desde SketchUp
-
-1. Instalar extensión **"SketchUp IFC Export"** (gratuita, del Extension Warehouse)
-2. Organizar el modelo por **capas (layers)**: crear una capa por cada planta
-3. Archivo → Exportar → **IFC 2x3**
-4. Los grupos de SketchUp se convierten en `IfcBuildingElementProxy`
-5. **Para que se vean los niveles**: Cada capa se mapea como propiedad de nivel. En ObraView aparecerán agrupados si el IFC contiene `IfcBuildingStorey`
-
-> **Alternativa**: Exportar a **OBJ** desde SketchUp (Archivo → Exportar → OBJ) y cargarlo directamente en ObraView.
-
----
-
-### Formatos compatibles
-
-| Formato | Soportado | Notas |
-|---|---|---|
-| **IFC (.ifc, .ifczip)** | ✅ Sí | Carga completa con niveles, propiedades y geometría |
-| **OBJ (.obj)** | ✅ Sí | Geometría básica (sin propiedades ni niveles) |
-| **STL (.stl)** | ❌ No | Previsto para futura versión |
-| **DWF (.dwf)** | ❌ No | Formato propietario Autodesk. Sin librerías JS open-source. Alternativa: exportar a IFC desde AutoCAD |
-
----
-
-## 🧪 Cómo probar sin Revit
-
-Puedes descargar modelos IFC de prueba gratis:
-- [IFC Test Files (buildingSMART)](https://technical.buildingsmart.org/resources/ifc-specification/ifc-test-files/)
-- [IFC File Generator](https://github.com/IfcSharp/IfcFileGenerator)
-- O modela algo básico en [FreeCAD](https://www.freecad.org/) y exporta a IFC
-
----
-
-## 🚀 ¿Primer paso?
-
-Abre `index.html` en tu navegador y deberías ver una escena 3D básica con un cubo y un grid. ¡Eso es la Fase 1 funcionando!
+La app se despliega automáticamente en: `https://profe-abel.github.io/obrasview/`
 
 ---
 
@@ -268,10 +202,10 @@ Abre `index.html` en tu navegador y deberías ver una escena 3D básica con un c
 
 - `web-ifc` es una librería WASM que lee archivos IFC directo en el navegador
 - Three.js se carga desde CDN (no requiere instalación)
-- No hay servidor, no hay build tools, no hay dependencias npm
+- No hay servidor, no hay build tools, no hay dependencias npm para producción
 - Compatible con Chrome, Edge, Firefox, Safari (incluyendo iOS/Android)
 - Para proyectos grandes (>500 MB), considerar cargar IFC en un Worker
 
 ---
 
-> **Estado actual**: 🟢 Fase 1 completada
+> **Estado actual**: ✅ Todas las 18 fases completadas

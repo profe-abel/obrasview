@@ -1,133 +1,260 @@
-# Implementación Visual Completada - Fase 1 (Refinamiento)
+# 📋 Plan de Implementación Visual — COMPLETADO
 
-## Resumen
+## ✅ SISTEMA DE DISEÑO COMPLETO
 
-Se ha completado la primera fase del plan de implementación visual, transformando la funcionalidad actual en una experiencia de usuario "Premium" con mejoras significativas en ventanas, dock, paneles específicos, experiencia móvil y detalles finales de pulido.
+El sistema visual de ObraView ha sido implementado siguiendo el diseño exacto del prototipo de `obraview_engineer/DESIGN.md`.
 
-## ✅ 1. Sistema de Ventanas (window-manager.js)
+---
 
-### Implementado:
-- **Sombras más profundas:** `box-shadow: 0 8px 32px rgba(0,0,0,0.4)` (ya existente)
-- **Bordes semi-transparentes:** `border: 1px solid rgba(255,255,255,0.1)`
-- **Blur más intenso:** `backdrop-filter: blur(16px)`
-- **Animaciones suaves:** Transiciones con `cubic-bezier(0.4, 0, 0.2, 1)` para abrir/cerrar ventanas
-- **Z-index dinámico:** Efecto de apilamiento visual con ventanas inferiores atenuadas (`opacity: 0.6`)
-- **Transiciones:** Agregar/eliminar visuales con escala (`transform: scale(0.95)`)
+## 🎨 **1. Variables CSS - PALETA DE COLORES COMPLETA**
 
-## ✅ 2. Dock Inferior (dock.js)
+### **Paleta Exacta del Prototipo:**
+```css
+/* Fondo y Superficies */
+--surface: #12121d
+--surface-navy: #1a1a2e
+--surface-container: #1f1e2a
+--surface-container-high: #292935
+--surface-variant: #343440
+--surface-bright: #383845
 
-### Implementado:
-- **Glassmorphism:** `backdrop-filter: blur(16px)` y `background: rgba(22, 22, 42, 0.7)`
-- **Fondo redondeado:** `border-radius: 20px` con efecto de levitación
-- **Micro-interacciones:** Efecto de escala (`transform: scale(1.1)`) al pasar mouse sobre botones
-- **Indicador de actividad:** Puntos con efecto de "pulso" cuando ventana está activa
+/* Textos */
+--text-primary: #e0e0e0
+--text-secondary: #888888
+--text-tertiary: #555555
 
-## ✅ 3. Alineación de Paneles Específicos (UI/UX)
+/* Accentos */
+--primary: #a4c9ff
+--primary-container: #4a9eff
+--on-primary-container: #003463
+--secondary: #ffb961
+--secondary-container: #e89300
+--tertiary: #ebb2ff
+--tertiary-container: #c681e1
+--issue-red: #e74c3c
+--collision-orange: #e67e22
 
-### Gantt (Programación 4D):
-- **Barras de progreso:** Gradientes visuales (`linear-gradient(135deg, #4a9eff, #3a8eef)`) con efecto hover
-- **Tipografía:** `JetBrains Mono` aplicada a escala temporal (ejes)
-- **Estilo de barras:** Bordes más definidos, efecto hover con elevación
+/* Bordes */
+--border-muted: #2a2a45
+```
 
-### Presupuesto 5D:
-- **Tabla moderna:** Filas alternas semi-transparentes (`background: rgba(255,255,255,0.05)`)
-- **Inputs estilizados:** Bordes redondeados, blur, sombra interna, efecto focus
-- **Badges:** Bordes redondeados (`border-radius: 12px`), efecto backdrop
+### **Border Radius Tokens:**
+- `--radius-sm: 0.125rem` (2px) - Botones primarios
+- `--radius: 0.25rem` (4px) - Inputs, secundarios
+- `--radius-lg: 0.5rem` (8px) - Ventanas, tarjetas
+- `--radius-xl: 0.75rem` (12px) - Dock, badges
+- `--radius-full: 0.75rem` (12px) - Radio botones
 
-### Dashboard Analytics:
-- **KPI Cards:** Iconos más grandes (`28px × 28px`), bordes redondeados (`border-radius: 8px`), fondo semitransparente
-- **S-Curve:** Colores más vivos (`#4a9eff` plan, `#10b981` real), líneas más limpias
+### **Spacing Tokens:**
+- `--spacing-unit: 4px`
+- `--spacing-gutter: 12px`
+- `--spacing-window: 12px`
+- `--spacing-desktop: 24px`
 
-### Detección de Colisiones:
-- **Badges de severidad:** Colores brillantes con fondo tenue:
-  - Crítica: `rgba(231,76,60,0.2)` + borde `rgba(231,76,60,0.4)`
-  - Alta: `rgba(230,126,34,0.2)` + borde `rgba(230,126,34,0.4)`
-  - Media: `rgba(243,156,18,0.2)` + borde `rgba(243,156,18,0.4)`
-  - Baja: `rgba(52,152,219,0.2)` + borde `rgba(52,152,219,0.4)`
+### **Tipografía Tokens:**
+```css
+--font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+--font-mono: 'JetBrains Mono', monospace;
+```
 
-## ✅ 4. Experiencia Móvil (Sheets & Mobile-First)
+### **Glassmorphism Tokens:**
+```css
+--glass-bg: rgba(22, 22, 42, 0.85);
+--glass-blur: blur(12px);
+```
 
-### Transiciones de Sheet:
-- **Deslizamiento suave:** `translateY(100%) → translateY(0)` con animación fluida
-- **Adaptación de tablas:** Sistema de "cards" apiladas para <600px (ej. presupuesto y rubros)
+---
 
-## ✅ 5. Detalles Finales de "Pulido" (Polishing)
+## 🔘 **2. Sistema de Botones**
 
-### Tipografía:
-- **Encabezados:** `Hanken Grotesk` para títulos
-- **Datos numéricos:** `JetBrains Mono` estrictamente para números e IDs
+### **Botón Primary:**
+- Fondo: `var(--primary-container)` (#4a9eff)
+- Texto: `var(--on-primary-container)` (#003463)
+- Border-radius: `var(--radius-sm)` (2px)
+- Font: JetBrains Mono 12px
+- Hover: opacity 0.8 + translateY(-1px)
 
-### Paleta de Colores:
-- **Colores de acento:** Validados con mismo valor hexadecimal exacto que prototipos
+### **Botón Secondary:**
+- Fondo: `var(--surface-variant)`
+- Borde: 1px solid `var(--border-muted)`
+- Border-radius: `var(--radius)` (4px)
+- Hover: border-color + text color → primary-container
 
-### Cursor & Feedback:
-- **Cursores personalizados:** Implementados para herramientas específicas (ej. cursor de "regla" para mediciones)
+### **Header Actions:**
+- Fondo transparente
+- Color: `var(--text-tertiary)`
+- Hover: rgba(255,255,255,0.05) + color primary
 
-## 🎨 Mejoras Estéticas Globles
+---
 
-### Fuentes:
-- `Hanken Grotesk`: Principal para encabezados y texto UI
-- `JetBrains Mono`: Exclusivo para escalas temporales, números, IDs y datos técnicos
+## 🪟 **3. Ventanas Flotantes - Glassmorphism**
 
-### Glassmorphism:
-- **Nivel 1:** `rgba(22,22,42,0.9)` + `blur(12px)` (paneles principales)
-- **Nivel 2:** `rgba(22,22,42,0.7)` + `blur(16px)` (dock, ventanas flotantes)
-- **Nivel 3:** `rgba(22,22,42,0.95)` + `blur(4px)` (overlays)
+### **Ventana Base:**
+- Background: `var(--glass-bg)` + `backdrop-filter: blur(12px)`
+- Border: 1px solid `var(--border-muted)`
+- Border-radius: 8px
+- Box-shadow: 0 8px 32px rgba(0,0,0,0.37)
+- Transition: cubic-bezier(0.4, 0, 0.2, 1)
 
-### Animaciones:
-- **Transiciones suaves:** `cubic-bezier(0.4, 0, 0.2, 1)`
-- **Micro-interacciones:** Efecto hover con escala y sombra
-- **Estado activo:** Pulse para elementos interactivos
+### **Estados de Actividad:**
+- `.active-glow-purple`: border #ebb2ff, shadow rgba(235,178,255,0.2)
+- `.active-glow-blue`: border #4a9eff, shadow rgba(74,158,255,0.2)
+- `.active-glow-gold`: border #ffb961, shadow rgba(255,185,97,0.2)
 
-### Efectos Visuales:
-- **Sombras:** 3 niveles (suave, medio, profundo)
-- **Bordes:** Transparentes con subtle degradado
-- **Degradados:** Lineales radiales para botones y efectos de hover
+### **Header de Ventana:**
+- Height: 48px
+- Background: rgba(255,255,255,0.05)
+- Title: JetBrains Mono 10px uppercase
 
-## 📊 Medición del Impacto
+---
 
-### Métricas de Calidad Percebida:
-- **Profundidad visual:** ↑ Efecto de capas (bordes transparentes, blur)
-- **Reactividad:** ↑ Micro-interacciones (hover, scale)
-- **Coherencia:** ↑ Aplicación consistente de tipografía y colores
-- **Fluididad:** ↑ Transiciones suaves (cubic-bezier)
+## 📱 **4. Elementos Móviles y Responsive**
 
-### Mejoras de Usabilidad:
-- **Claridad visual:** Mejores contraste, separación, jerarquía
-- **Feedback táctil:** Hover states más evidentes
-- **Legibilidad:** Fuentes apropiadas para cada contexto
-- **Retroalimentación:** Estados activos/anímados más claros
+### **Breakpoint Móvil (< 768px):**
+- Botones: font-size 10px, padding reducido
+- Header model-info: oculto
+- Toolbar: bottom 64px, compacto
+- Dock: bottom 6px, buttons 40px
+- Dock labels: font-size 7px
 
-## 🔧 Arquitectura Técnica
+---
 
-### Patrones de Código:
-- **Componentización:** Estilos por capa (header, panels, windows)
-- **CSS Custom Properties:** Variables centralizadas para colores, espaciado, tipografía
-- **Responsive breakpoints:** Optimizado para <768px y <600px
+## 🎯 **5. Componentes Específicos**
 
-### Optimización de Rendimiento:
-- **CSS crítico:** Estilos esenciales en línea, estilos no críticos importados lazy
-- **Transformaciones:** Uso de `transform` en lugar de `width/height` para animaciones
-- **Backdrop Filter:** Usado con moderación para rendimiento móvil
+### **Form Inputs:**
+- Background: var(--surface-variant)
+- Border: 1px solid var(--border-muted)
+- Focus: border-color primary-container + box-shadow 0 0 0 2px rgba(74,158,255,0.2)
 
-## ✅ Estado de Completación
+### **Tabs:**
+- Font: JetBrains Mono 12px
+- Active: background primary-container, color on-primary-container
+- Hover (inactive): background surface-variant
 
-**100% - Todas las especificaciones de diseño implementadas:**
-- ✅ 5 categorías principales implementadas
-- ✅ 12+ componentes estilizados
-- ✅ 8+ animaciones implementadas
-- ✅ Paleta de colores validada
-- ✅ Tipografía aplicada
-- ✅ Responsive design optimizado
-- ✅ Efectos visuales globales coherentes
+### **Dashboard KPI Cards:**
+- Padding: 12px
+- Border: 1px solid var(--border-muted)
+- Border-radius: 8px
+- Backdrop-filter: blur(8px)
+- Hover: translateY(-2px) + box-shadow
 
-## 🎯 Resultado
+### **Budget Table:**
+- Grid layout con columnas responsive
+- Badges: backdrop-filter blur(4px)
+- Inputs: focus con box-shadow 0 0 0 2px rgba(243,156,18,0.2)
 
-La interfaz ahora ofrece una **experiencia premium** con:
-- **Profundidad visual** (bordes transparentes, sombras, glassmorphism)
-- **Reactividad táctil** (micro-interacciones, hover effects)
-- **Claridad tipográfica** (fuentes apropiadas para cada contexto)
-- **Fluididad animada** (transiciones suaves, estado activo)
-- **Diseño coherente** (colores, espaciado, componentes estandarizados)
+### **Collision Severity Badges:**
+- Critical: rgba(231,76,60,0.2) + #e74c3c
+- High: rgba(230,126,34,0.2) + #e67e22
+- Medium: rgba(243,156,18,0.2) + #f39c12
+- Low: rgba(52,152,219,0.2) + #3498db
 
-El sistema ahora proporciona una **percepción de software profesional de alto nivel**, superando significativamente el estado anterior.
+---
+
+## 🍔 **6. Menú Desplegable "Archivo"**
+
+### **Dropdown:**
+- Botón: JetBrains Mono 10px, color text-tertiary
+- Menu: bg rgba(22,22,42,0.95) + blur(12px)
+- Border-radius: 8px
+- Items: 12px, con iconos Material Symbols
+- Transición: opacity 0→1 + translateY(-4px→0)
+
+### **Modal de Confirmación:**
+- Overlay: rgba(0,0,0,0.6) + blur(4px)
+- Card: bg surface-navy, border-radius 12px
+- Botones: btn-primary + btn-secondary
+- Limpieza: AbortController (sin memory leaks)
+
+---
+
+## 📊 **7. KPIs Animados**
+
+### **Animación de Contadores:**
+- Función: `animateValue(el, start, end, duration, formatter)`
+- Easing: easeOutCubic (deceleración suave)
+- Duración: 1200ms
+- Formatos: currency ($XM/$XK), percent (X.X%), integer
+- Invocación: setTimeout(animateKPIs, 50) post-render
+
+---
+
+## 🖱️ **8. Scrollbars Temáticos**
+
+### **WebKit (Chrome, Edge, Safari):**
+- Width: 4px
+- Track: transparent
+- Thumb: var(--border-muted) + border-radius var(--radius-full)
+- Hover: #555
+
+### **Firefox:**
+- scrollbar-width: thin
+- scrollbar-color: #2a2a45 transparent
+
+---
+
+## ✅ **IMPLEMENTACIÓN COMPLETADA - Checklist**
+
+### **Sistema de Diseño:**
+- [x] Variables CSS - Paleta exacta del prototipo
+- [x] Variables derivadas dentro de `:root` (sin errores de scope)
+- [x] Border Radius tokens (2px → 12px)
+- [x] Spacing tokens (4px → 24px)
+- [x] Tipografía: Hanken Grotesk (body) + JetBrains Mono (data)
+- [x] Glassmorphism tokens
+
+### **Componentes:**
+- [x] Botones primary/secondary/header-actions
+- [x] Ventanas flotantes con glassmorphism + glow states
+- [x] Dock inferior con glassmorphism + pulse animation
+- [x] Header con branding correcto
+- [x] Form inputs con focus states
+- [x] Tabs con estados active/hover
+- [x] Dashboard KPI cards con contadores animados
+- [x] Budget table con badges modernos
+- [x] Collision severity badges
+- [x] Menú desplegable "Archivo"
+- [x] Modal de confirmación (AbortController)
+- [x] Scrollbars temáticos (WebKit + Firefox)
+- [x] Context menu (right-click)
+- [x] Progress bar con gradiente
+
+### **Interacciones:**
+- [x] Hover states en todos los componentes
+- [x] Transiciones suaves (cubic-bezier)
+- [x] Micro-interactions (botones, cards)
+- [x] Focus states accesibles
+- [x] Z-index management automático
+
+### **Responsive:**
+- [x] Breakpoint móvil (< 768px)
+- [x] Dock compacto
+- [x] Toolbar responsive
+- [x] Headers ocultos en móvil
+- [x] Botones reducidos
+
+### **Calidad:**
+- [x] Sin errores de scope CSS (variables dentro de `:root`)
+- [x] Sin memory leaks (AbortController en modal)
+- [x] Sin console.log de debug
+- [x] Sin código duplicado (reset CSS único)
+
+---
+
+## 🚀 **Resultado**
+
+El sistema implementa **exactamente el diseño del prototipo** con:
+
+- **Paleta de colores profesional** con semántica asignada
+- **Sistema tipográfico** con JetBrains Mono para datos técnicos
+- **Diseño de botones** con elevación sutil y hover states
+- **Ventanas flotantes** con efecto depth y estados activos
+- **Dock inferior** con glassmorphism y pulse animation
+- **Menú desplegable** con modal de confirmación estilizado
+- **KPIs animados** con contadores que cuentan de 0 al valor final
+- **Scrollbars temáticos** en todos los navegadores
+- **Interfaz móvil** completamente adaptada a pantalla pequeña
+- **Micro-interactions** para retroalimentación táctil
+- **Componentes consistentes** en toda la aplicación
+
+El usuario experimentará una **experiencia premium** con profesionalismo, coherencia y alto nivel visual que coincide exactamente con el diseño aprobado en el prototipo.
