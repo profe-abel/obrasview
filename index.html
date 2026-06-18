@@ -98,6 +98,20 @@
     /* Tooltip */
     #viewer-tooltip { z-index: 20; }
 
+    /* Context menu */
+    #context-menu {
+      position: absolute; z-index: 25; display: none;
+      background: rgba(22,22,42,0.97); border: 1px solid #2a2a45;
+      border-radius: 6px; padding: 4px 0; min-width: 160px;
+      backdrop-filter: blur(4px);
+    }
+    #context-menu .ctx-item {
+      padding: 6px 14px; font-size: 12px; cursor: pointer; color: #ccc;
+      display: flex; align-items: center; gap: 8px;
+    }
+    #context-menu .ctx-item:hover { background: #2a2a45; color: #fff; }
+    #context-menu .ctx-divider { height: 1px; background: #2a2a45; margin: 4px 0; }
+
     /* Issue panel (annotation) */
     #issue-panel {
       position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
@@ -397,6 +411,7 @@
         </div>
         <div class="col-results" id="col-results"></div>
       </div>
+      <div id="context-menu"></div>
       <div id="phase-badge">Fase 3 — Carga un modelo IFC para empezar</div>
       <div id="view-toolbar">
         <button class="vbtn" data-view="default" title="Perspectiva (R)">3D</button>

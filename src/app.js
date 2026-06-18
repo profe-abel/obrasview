@@ -23,6 +23,7 @@ const ObraApp = (() => {
     setupClickSelect();
     setupToolbar();
     setupTooltipHover(container);
+    setupContextMenu(container);
     setupClipping();
   }
 
@@ -133,6 +134,7 @@ const ObraApp = (() => {
       });
 
       const meshCount = group.children.length;
+      document.querySelector('.empty-state')?.remove();
       ObraViewer.addModel(group);
 
       if (meshCount === 0) {
@@ -278,6 +280,94 @@ const ObraApp = (() => {
         }
       } else {
         ObraViewer.hideTooltip();
+      }
+    });
+  }
+
+  function setupContextMenu(container) {
+    const menu = document.getElementById('context-menu');
+    const modelGroup = ObraViewer.getModelGroup();
+
+    container.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      menu.style.display = 'none';
+      if (!state.entries) return;
+
+      const rect = container.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, ObraViewer.getCamera());
+      const meshes = [];
+      modelGroup.children.forEach(child => {
+        child.traverse(node => { if (node.isMesh) meshes.push(node); });
+      });
+      const hits = raycaster.intersectObjects(meshes);
+      let hitId = null;
+      if (hits.length > 0) {
+        let hit = hits[0].object;
+        while (hit.parent && hit.parent !== modelGroup) hit = hit.parent;
+        hitId = hit.userData.expressID;
+      }
+
+      let html = '';
+      if (hitId && state.entries.has(hitId)) {
+        const entry = state.entries.get(hitId);
+        html += `<div class="ctx-item" data-action="select" data-eid="${hitId}">🎯 Seleccionar</div>`;
+        html += `<div class="ctx-item" data-action="isolate" data-eid="${hitId}">🔍 Aislar</div>`;
+        html += `<div class="ctx-item" data-action="hide" data-eid="${hitId}">👁 Ocultar</div>`;
+        html += `<div class="ctx-item" data-action="pin" data-eid="${hitId}">📌 Agregar incidencia</div>`;
+        html += `<div class="ctx-divider"></div>`;
+      }
+      html += `<div class="ctx-item" data-action="showall">👁 Mostrar todo</div>`;
+      menu.innerHTML = html;
+      menu.style.left = Math.min(e.clientX - rect.left, rect.width - 180) + 'px';
+      menu.style.top = Math.min(e.clientY - rect.top, rect.height - 200) + 'px';
+      menu.style.display = 'block';
+    });
+
+    container.addEventListener('click', () => { menu.style.display = 'none'; });
+    menu.addEventListener('click', (e) => {
+      const item = e.target.closest('.ctx-item');
+      if (!item) return;
+      menu.style.display = 'none';
+      const action = item.dataset.action;
+      const eid = item.dataset.eid ? parseInt(item.dataset.eid) : null;
+      switch (action) {
+        case 'select':
+          if (eid) { state.selectedId = eid; ObraViewer.clearHighlight(); ObraViewer.highlightElement(eid, 0xffaa00); showProperties(eid); }
+          break;
+        case 'isolate':
+          if (eid) ObraViewer.isolateElement(eid);
+          break;
+        case 'hide':
+          if (eid) { ObraViewer.setElementVisibility(eid, false); if (ObraTreePanel && ObraTreePanel.render) ObraTreePanel.render(); }
+          break;
+        case 'showall':
+          ObraViewer.showAllElements();
+          if (ObraTreePanel && ObraTreePanel.render) ObraTreePanel.render();
+          break;
+        case 'pin':
+          if (eid && state.entries.has(eid)) {
+            const entry = state.entries.get(eid);
+            ObraTools.initMarkers();
+            const box = new THREE.Box3().setFromObject(modelGroup.children.find(c => c.userData.expressID === eid));
+            if (box && !box.isEmpty()) {
+              const center = box.getCenter(new THREE.Vector3());
+              ObraTools.addMarkerAtPosition(center);
+              const idx = ObraTools.getMarkers().length - 1;
+              pendingMarkerIndex = idx;
+              const panel = document.getElementById('issue-panel');
+              panel.classList.add('visible');
+              document.getElementById('iss-preview').textContent = `${entry.typeName} — ${entry.name}`;
+              document.getElementById('iss-title').value = '';
+              document.getElementById('iss-desc').value = '';
+              document.getElementById('iss-status').value = 'pendiente';
+            }
+          }
+          break;
       }
     });
   }

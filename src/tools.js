@@ -24,6 +24,29 @@ const ObraTools = (() => {
 
   function isActive() { return active; }
 
+  const SNAP_THRESHOLD = 0.15;
+
+  function snapToVertex(hit) {
+    const mesh = hit.object;
+    const posAttr = mesh.geometry.attributes.position;
+    if (!posAttr) return hit.point.clone();
+    const localPt = hit.point.clone();
+    if (mesh.matrixWorld) localPt.applyMatrix4(new THREE.Matrix4().copy(mesh.matrixWorld).invert());
+    let bestDist = Infinity;
+    let bestVertex = null;
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i), vy = posAttr.getY(i), vz = posAttr.getZ(i);
+      const dx = localPt.x - vx, dy = localPt.y - vy, dz = localPt.z - vz;
+      const d = dx * dx + dy * dy + dz * dz;
+      if (d < bestDist) { bestDist = d; bestVertex = new THREE.Vector3(vx, vy, vz); }
+    }
+    if (bestDist < SNAP_THRESHOLD * SNAP_THRESHOLD && bestVertex) {
+      if (mesh.matrixWorld) bestVertex.applyMatrix4(mesh.matrixWorld);
+      return bestVertex;
+    }
+    return hit.point.clone();
+  }
+
   function handleClick(event) {
     if (!active) return;
     const container = ObraViewer.getContainer();
@@ -42,7 +65,7 @@ const ObraTools = (() => {
     if (meshes.length === 0) return;
     const hits = raycaster.intersectObjects(meshes);
     if (hits.length === 0) return;
-    const pt = hits[0].point.clone();
+    const pt = snapToVertex(hits[0]);
     points.push(pt);
     if (points.length === 2) {
       addMeasurement(points[0], points[1]);
@@ -245,6 +268,25 @@ const ObraTools = (() => {
 
   function isMarkerMode() { return markerMode; }
 
+  function createPinAt(pt) {
+    const group = new THREE.Group();
+    group.position.copy(pt);
+    const coneGeo = new THREE.ConeGeometry(0.08, 0.25, 8);
+    const coneMat = new THREE.MeshBasicMaterial({ color: 0xff4444 });
+    const cone = new THREE.Mesh(coneGeo, coneMat);
+    cone.position.y = 0.125;
+    group.add(cone);
+    const sphereGeo = new THREE.SphereGeometry(0.06, 8, 8);
+    const sphereMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+    sphere.position.y = 0.28;
+    group.add(sphere);
+    markerGroup.add(group);
+    const marker = { position: pt, group, issueId: null };
+    markers.push(marker);
+    return marker;
+  }
+
   function addMarkerAtClick(event) {
     if (!markerMode) return null;
     const container = ObraViewer.getContainer();
@@ -272,28 +314,12 @@ const ObraTools = (() => {
       pt = raycaster.ray.origin.clone().add(dir.multiplyScalar(dist));
     }
 
-    // Create pin marker (cone + sphere)
-    const group = new THREE.Group();
-    group.position.copy(pt);
+    return createPinAt(pt);
+  }
 
-    const coneGeo = new THREE.ConeGeometry(0.08, 0.25, 8);
-    const coneMat = new THREE.MeshBasicMaterial({ color: 0xff4444 });
-    const cone = new THREE.Mesh(coneGeo, coneMat);
-    cone.position.y = 0.125;
-    group.add(cone);
-
-    const sphereGeo = new THREE.SphereGeometry(0.06, 8, 8);
-    const sphereMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const sphere = new THREE.Mesh(sphereGeo, sphereMat);
-    sphere.position.y = 0.28;
-    group.add(sphere);
-
-    markerGroup.add(group);
-
-    const marker = { position: pt, group, issueId: null };
-    markers.push(marker);
-
-    return marker;
+  function addMarkerAtPosition(position) {
+    initMarkers();
+    return createPinAt(position);
   }
 
   function setMarkerIssue(markerIndex, issueId) {
@@ -353,7 +379,7 @@ const ObraTools = (() => {
   return {
     init, toggleMeasure, isActive, handleClick, clearAll, getCount,
     getTypeNames, detectCollisions, clearCollisions, getCollisions, exportCollisionsJSON,
-    initMarkers, toggleMarkerMode, isMarkerMode, addMarkerAtClick,
+    initMarkers, toggleMarkerMode, isMarkerMode, addMarkerAtClick, addMarkerAtPosition,
     setMarkerIssue, removeMarker, clearMarkers, getMarkers, getLastMarker, updateMarkerColor,
   };
 })();
